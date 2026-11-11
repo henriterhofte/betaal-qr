@@ -4,16 +4,19 @@
   var OPSLAG = 'betaalqr.ontvangers';
   var $ = function (id) { return document.getElementById(id); };
   var velden = ['naam', 'iban', 'bic', 'bedrag', 'omschrijving'];
-  var laatste = null;
+  var laatste = null;   // uitkomst van EPC.maak() voor stap 2 en 3
 
   // Clickjacking: GitHub Pages kan geen frame-ancestors-header sturen, dus weigeren we zelf in een frame te werken.
   if (window.top !== window.self) {
-    document.querySelector('.layout').remove();
+    $('app').remove();
     $('ingebed').hidden = false;
     return;
   }
 
-  // ---- opgeslagen ontvangers (alleen localStorage van deze browser) ----
+  // Bewust GEEN vooraf ingevulde links (?iban=… of #iban=…): zo'n link op dit domein zou een
+  // handig phishingmiddel zijn ("betaal via betaal.terhofte.net/#iban=<oplichter>").
+
+  // ---- bewaarde ontvangers (alleen localStorage van deze browser) ----
   function leesOntvangers() {
     try { return JSON.parse(localStorage.getItem(OPSLAG) || '[]') || []; } catch (e) { return []; }
   }
@@ -32,26 +35,19 @@
     });
     sel.value = kies || '';
     $('verwijder').disabled = !sel.value;
+    $('veld-opgeslagen').hidden = lijst.length === 0;
   }
 
   $('opgeslagen').addEventListener('change', function () {
-    var o = leesOntvangers().filter(function (x) { return x.iban === this.value; }, this)[0];
+    var iban = this.value;
+    var o = leesOntvangers().filter(function (x) { return x.iban === iban; })[0];
     $('verwijder').disabled = !o;
     if (!o) return;
     $('naam').value = o.naam;
     $('iban').value = EPC.formatteerIban(o.iban);
     $('bic').value = o.bic || '';
+    controleer();
     $('bedrag').focus();
-    werkBij();
-  });
-
-  $('bewaar').addEventListener('click', function () {
-    var naam = $('naam').value.trim(), iban = EPC.normaliseerIban($('iban').value);
-    if (!naam || !EPC.ibanGeldig(iban)) { werkBij(true); return; }
-    var lijst = leesOntvangers().filter(function (x) { return x.iban !== iban; });
-    lijst.push({ naam: naam, iban: iban, bic: EPC.normaliseerIban($('bic').value) });
-    if (!schrijfOntvangers(lijst)) { alertTekst('Opslaan lukt niet in deze browser (privévenster?).'); return; }
-    vulLijst(iban);
   });
 
   $('verwijder').addEventListener('click', function () {
@@ -61,15 +57,113 @@
     vulLijst();
   });
 
+  // ---- stap 1: invullen ----
+  var aangeraakt = {};
+  function invoer() {
+    var i = {};
+    velden.forEach(function (v) { i[v] = $(v).value; });
+    return i;
+  }
+  function controleer(alles) {
+    $('teller').textContent = $('omschrijving').value.length;
+    var r = EPC.maak(invoer());
+    velden.forEach(function (v) {
+      var toon = (alles || aangeraakt[v]) && r.fouten[v];
+      $('fout-' + v).textContent = toon || '';
+      $(v).setAttribute('aria-invalid', toon ? 'true' : 'false');
+    });
+    return r;
+  }
+  velden.forEach(function (v) {
+    $(v).addEventListener('input', function () { controleer(); });
+    $(v).addEventListener('blur', function () {
+      aangeraakt[v] = true;
+      if (v === 'iban' && EPC.ibanGeldig(this.value)) this.value = EPC.formatteerIban(this.value);
+      controleer();
+    });
+  });
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var r = controleer(true);
+    if (!r.ok) {
+      var eerste = velden.filter(function (v) { return r.fouten[v]; })[0];
+      if (eerste) $(eerste).focus();
+      return;
+    }
+    laatste = r;
+    vulControle(r);
+    naarStap(2);
+  });
+
   $('wis').addEventListener('click', function () {
     velden.forEach(function (v) { $(v).value = ''; });
+    aangeraakt = {};
     $('opgeslagen').value = '';
     $('verwijder').disabled = true;
-    werkBij();
+    controleer();
     $('naam').focus();
   });
 
-  // ---- QR tekenen ----
+  // ---- stap 2: controleren ----
+  function vulControle(r) {
+    var v = r.velden;
+    $('c-bedrag').textContent = EPC.centenNaarTekst(v.centen);
+    $('c-naam').textContent = v.naam;
+    $('c-iban').textContent = EPC.formatteerIban(v.iban) + (v.bic ? ' (' + v.bic + ')' : '');
+    $('c-oms').textContent = v.kenmerk ? 'Kenmerk ' + v.kenmerk : (v.omschrijving || '—');
+    var ul = $('waarschuwingen'); ul.textContent = '';
+    ibanWijzigingen(v).forEach(function (t) { meld(t).classList.add('ernstig'); });
+    r.waarschuwingen.forEach(meld);
+    var bekend = leesOntvangers().some(function (o) { return o.iban === v.iban; });
+    $('bewaar').checked = false;
+    $('bewaar').parentNode.hidden = bekend;
+  }
+  function meld(t) {
+    var li = document.createElement('li');
+    li.textContent = t;
+    $('waarschuwingen').appendChild(li);
+    return li;
+  }
+
+  // Factuurfraude ("ons rekeningnummer is gewijzigd"): bekende naam met een ander IBAN dan bewaard.
+  function ibanWijzigingen(v) {
+    var naam = v.naam.toLowerCase();
+    return leesOntvangers().filter(function (o) {
+      return EPC.sepaTekst(o.naam).toLowerCase() === naam && o.iban !== v.iban;
+    }).map(function (o) {
+      return 'Let op: voor "' + o.naam + '" heb je eerder IBAN ' + EPC.formatteerIban(o.iban) +
+        ' bewaard. Een gewijzigd rekeningnummer is een bekende vorm van fraude. Bel de ontvanger op een nummer dat je al had.';
+    });
+  }
+
+  $('terug1').addEventListener('click', function () { naarStap(1); });
+  $('naar3').addEventListener('click', function () {
+    if (!laatste) return;
+    if ($('bewaar').checked) {
+      var v = laatste.velden;
+      var lijst = leesOntvangers().filter(function (x) { return x.iban !== v.iban; });
+      lijst.push({ naam: v.naam, iban: v.iban, bic: v.bic });
+      schrijfOntvangers(lijst);
+      vulLijst(v.iban);
+    }
+    vulBetalen(laatste);
+    naarStap(3);
+  });
+
+  // ---- stap 3: betalen ----
+  function vulBetalen(r) {
+    var v = r.velden;
+    tekenQr(r.payload);
+    $('b-bedrag').textContent = EPC.centenNaarTekst(v.centen);
+    $('b-naam').textContent = v.naam;
+    $('k-naam').textContent = v.naam;
+    $('k-iban').textContent = EPC.formatteerIban(v.iban);
+    $('k-bedrag').textContent = kopieerTekst('bedrag');
+    $('k-oms').textContent = kopieerTekst('omschrijving') || '—';
+    $('payload').textContent = r.payload;
+  }
+
   function tekenQr(payload) {
     var qr = qrcode(0, 'M');
     qr.addData(payload, 'Byte');
@@ -85,63 +179,6 @@
     }
   }
 
-  function alertTekst(t) {
-    var ul = $('waarschuwingen'), li = document.createElement('li');
-    li.textContent = t; ul.appendChild(li);
-    return li;
-  }
-
-  // ---- formulier verwerken ----
-  var aangeraakt = {};
-  function werkBij(alles) {
-    var invoer = {};
-    velden.forEach(function (v) { invoer[v] = $(v).value; });
-    $('teller').textContent = $('omschrijving').value.length;
-
-    var r = EPC.maak(invoer);
-    velden.forEach(function (v) {
-      var toon = (alles || aangeraakt[v]) && r.fouten[v];
-      $('fout-' + v).textContent = toon || '';
-      $(v).setAttribute('aria-invalid', toon ? 'true' : 'false');
-    });
-
-    laatste = r.ok ? r : null;
-    $('klaar').hidden = !r.ok;
-    $('leeg').hidden = r.ok;
-    if (!r.ok) return;
-
-    tekenQr(r.payload);
-    $('s-naam').textContent = r.velden.naam;
-    $('s-iban').textContent = EPC.formatteerIban(r.velden.iban) + (r.velden.bic ? ' (' + r.velden.bic + ')' : '');
-    $('s-bedrag').textContent = EPC.centenNaarTekst(r.velden.centen);
-    $('s-oms').textContent = r.velden.kenmerk ? 'Kenmerk ' + r.velden.kenmerk : (r.velden.omschrijving || '—');
-    $('payload').textContent = r.payload;
-    var ul = $('waarschuwingen'); ul.textContent = '';
-    ibanWijzigingen(r.velden).forEach(function (t) { alertTekst(t).classList.add('ernstig'); });
-    r.waarschuwingen.forEach(alertTekst);
-  }
-
-  // Factuurfraude ("ons rekeningnummer is gewijzigd"): bekende naam met een ander IBAN dan opgeslagen.
-  function ibanWijzigingen(v) {
-    var naam = v.naam.toLowerCase();
-    return leesOntvangers().filter(function (o) {
-      return EPC.sepaTekst(o.naam).toLowerCase() === naam && o.iban !== v.iban;
-    }).map(function (o) {
-      return 'Let op: voor "' + o.naam + '" heb je eerder IBAN ' + EPC.formatteerIban(o.iban) +
-        ' bewaard. Een gewijzigd rekeningnummer is een bekende vorm van fraude. Bel de ontvanger op een nummer dat je al had.';
-    });
-  }
-
-  velden.forEach(function (v) {
-    $(v).addEventListener('input', function () { werkBij(); });
-    $(v).addEventListener('blur', function () {
-      aangeraakt[v] = true;
-      if (v === 'iban' && EPC.ibanGeldig(this.value)) this.value = EPC.formatteerIban(this.value);
-      werkBij();
-    });
-  });
-
-  // ---- kopiëren (vooral voor de telefoon: daar kun je de eigen QR-code niet scannen) ----
   function kopieerTekst(veld) {
     var v = laatste.velden;
     if (veld === 'naam') return v.naam;
@@ -152,14 +189,12 @@
   document.querySelectorAll('.kopieer').forEach(function (knop) {
     knop.addEventListener('click', function () {
       if (!laatste) return;
-      var oud = 'Kopieer';
-      var meld = function (t) { knop.textContent = t; setTimeout(function () { knop.textContent = oud; }, 1500); };
-      if (!navigator.clipboard) { meld('Lukt niet'); return; }
-      navigator.clipboard.writeText(kopieerTekst(knop.dataset.veld)).then(function () { meld('Gekopieerd'); }, function () { meld('Lukt niet'); });
+      var meldKort = function (t) { knop.textContent = t; setTimeout(function () { knop.textContent = 'Kopieer'; }, 1500); };
+      if (!navigator.clipboard) { meldKort('Lukt niet'); return; }
+      navigator.clipboard.writeText(kopieerTekst(knop.dataset.veld)).then(function () { meldKort('Gekopieerd'); }, function () { meldKort('Lukt niet'); });
     });
   });
 
-  // ---- afbeelding opslaan en delen ----
   function bestandsnaam() {
     var oms = (laatste.velden.kenmerk || laatste.velden.omschrijving || 'betaling').replace(/[^A-Za-z0-9]+/g, '-').slice(0, 40);
     return 'betaal-qr-' + oms.replace(/^-|-$/g, '') + '.png';
@@ -174,7 +209,7 @@
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
     });
   });
-  // Delen via het deelmenu van de telefoon (bijvoorbeeld naar jezelf, om op een ander apparaat te scannen).
+  // Delen via het deelmenu van de telefoon: naar de bank-app (als die afbeeldingen aanneemt), naar Foto's of naar jezelf.
   var kanDelen = !!(navigator.canShare && window.File && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] }));
   $('deel').hidden = !kanDelen;
   $('deel').addEventListener('click', function () {
@@ -184,8 +219,27 @@
     });
   });
 
-  // Bewust GEEN vooraf ingevulde links (?iban=… of #iban=…): zo'n link op dit domein zou een
-  // handig phishingmiddel zijn ("betaal via betaal.terhofte.net/#iban=<oplichter>").
+  $('terug2').addEventListener('click', function () { naarStap(2); });
+  $('nieuw').addEventListener('click', function () {
+    velden.forEach(function (v) { $(v).value = ''; });
+    aangeraakt = {};
+    laatste = null;
+    $('opgeslagen').value = '';
+    controleer();
+    naarStap(1);
+  });
+
+  // ---- stappen wisselen ----
+  function naarStap(n) {
+    [1, 2, 3].forEach(function (i) { $('stap' + i).hidden = i !== n; });
+    document.querySelectorAll('.stappen li').forEach(function (li) {
+      var i = +li.dataset.stap;
+      li.classList.toggle('gedaan', i <= n);
+      if (i === n) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+    });
+    $('kop' + n).focus({ preventScroll: true });
+    window.scrollTo({ top: 0 });
+  }
 
   // ---- vertrouwen: de CSP leesbaar tonen, de commit en de offline-status ----
   var cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
@@ -200,7 +254,9 @@
   }
 
   vulLijst();
-  werkBij();
+  controleer();
+  naarStap(1);
+  $('kop1').blur();
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     navigator.serviceWorker.register('sw.js').then(function () {
