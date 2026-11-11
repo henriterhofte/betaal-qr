@@ -151,6 +151,20 @@ def herinnering(pg, naam: str, verwacht: dict) -> None:
             pass
 
 
+def doneren(pg, basis: str) -> None:
+    """De doneervraag: zichtbaar, weg te klikken (ook na herladen), en via de kopbalk altijd terug te halen."""
+    pg.goto(basis + "index.html")
+    meld(pg.is_visible("#doneren") and pg.is_visible("#doneren img"), "doneren: vast blok met foto zichtbaar in stap 1")
+    pg.click("#doneren [data-doneer=later]")
+    meld(not pg.is_visible("#doneren"), "doneren: 'Niet nu' verbergt het blok")
+    pg.reload()
+    meld(not pg.is_visible("#doneren"), "doneren: na herladen nog steeds verborgen")
+    pg.click("#naar-doneren")
+    meld(pg.is_visible("#doneren"), "doneren: knop in de kopbalk toont het toch")
+    pg.click("#doneren [data-doneer=gedaan]")
+    meld("Dank je wel" in pg.inner_text("main"), "doneren: 'Al gedaan' geeft een bedankje")
+
+
 def eigen(pg, basis: str, paden: list[str]) -> None:
     for p in paden:
         pdf = Path(p)
@@ -185,6 +199,7 @@ def main() -> None:
         unit(pg, basis)
         csp.clear()   # test.html heeft geen CSP; vanaf hier telt het
         facturen(pg, basis)
+        doneren(pg, basis)
         if a.pdf:
             eigen(pg, basis, a.pdf)
         meld(not csp, "geen CSP-overtredingen in de app" + ("" if not csp else ":\n     " + "\n     ".join(sorted(set(csp))[:5])))

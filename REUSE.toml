@@ -31,3 +31,9 @@ SPDX-License-Identifier = "Apache-2.0"
 path = ["tests/facturen/*.pdf", "tests/facturen/*.json"]
 SPDX-FileCopyrightText = "2026 Henri ter Hofte"
 SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+# Portret van de maker: niet onder de EUPL; wie forkt, vervangt of verwijdert het.
+path = "beeld/henri.jpg"
+SPDX-FileCopyrightText = "2015 Henri ter Hofte"
+SPDX-License-Identifier = "LicenseRef-AlleRechtenVoorbehouden"

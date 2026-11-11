@@ -407,9 +407,43 @@
     naarStap(1);
   });
 
-  // "Doneren" in de kopbalk: in stap 3 naar het blok in de kaart, anders naar het vaste blok.
+  // ---- doneren ----
+  // "Al gedaan" verbergt de vraag een jaar, "Niet nu" dertig dagen (alleen in de opslag van deze browser).
+  // De knop "Doneren" in de kopbalk werkt altijd, ook als de vraag verborgen is.
+  var DONEER_OPSLAG = 'betaalqr.doneren';
+  var DAG = 24 * 60 * 60 * 1000;
+  var doneerToch = false;   // via de kopbalk gevraagd: dan toch tonen
+  var huidigeStap = 1;
+  function doneerVerborgen() {
+    if (doneerToch) return false;
+    try { var d = JSON.parse(localStorage.getItem(DONEER_OPSLAG) || 'null'); return !!(d && d.tot > Date.now()); } catch (e) { return false; }
+  }
+  function pasDonerenToe(n) {
+    var weg = doneerVerborgen();
+    $('doneer-actief').hidden = weg;
+    $('doneren').hidden = n === 3 || weg;   // in stap 3 staat het blok al in de kaart
+  }
+  document.querySelectorAll('[data-doneer]').forEach(function (knop) {
+    knop.addEventListener('click', function () {
+      var gedaan = knop.dataset.doneer === 'gedaan';
+      try { localStorage.setItem(DONEER_OPSLAG, JSON.stringify({ tot: Date.now() + (gedaan ? 365 : 30) * DAG, reden: knop.dataset.doneer })); } catch (e) {}
+      doneerToch = false;
+      var blok = knop.closest('.doneer');
+      if (gedaan) {
+        var dank = document.createElement('p');
+        dank.className = 'doneer-dank';
+        dank.setAttribute('role', 'status');
+        dank.textContent = 'Dank je wel! Daar wordt de natuur blij van.';
+        blok.parentNode.insertBefore(dank, blok.nextSibling);
+        setTimeout(function () { dank.remove(); }, 6000);
+      }
+      pasDonerenToe(huidigeStap);
+    });
+  });
   $('naar-doneren').addEventListener('click', function (e) {
     e.preventDefault();
+    doneerToch = true;
+    pasDonerenToe(huidigeStap);
     var doel = $('stap3').hidden ? $('doneren') : $('doneer-actief');
     doel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     (doel.querySelector('h2[tabindex]') || doel).focus({ preventScroll: true });
@@ -417,9 +451,9 @@
 
   // ---- stappen wisselen ----
   function naarStap(n) {
+    huidigeStap = n;
     [1, 2, 3].forEach(function (i) { $('stap' + i).hidden = i !== n; });
-    // In stap 3 staat het doneerblok al in de kaart; het vaste blok eronder dan niet nog eens.
-    $('doneren').hidden = n === 3;
+    pasDonerenToe(n);
     document.querySelectorAll('.stappen li').forEach(function (li) {
       var i = +li.dataset.stap;
       li.classList.toggle('gedaan', i <= n);

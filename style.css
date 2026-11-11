@@ -302,3 +302,15 @@ html { scroll-padding-top: 16px; }
 .later h2 { margin: 0; font-size: 1rem; }
 .datum-veld { max-width: 240px; }
 .datum-tip { margin: 0; font-size: .92rem; }
+
+/* doneren: maker, knoppen, wegklikken */
+.doneer-maker { display: flex; gap: 14px; align-items: flex-start; }
+.doneer-maker img { flex: none; border-radius: 50%; object-fit: cover; border: 2px solid var(--vlak); box-shadow: 0 0 0 1px var(--rand); }
+.doneer-maker h2 { margin: 0 0 4px; }
+.doneer-knop { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.doneer-weg { display: flex; flex-wrap: wrap; gap: 4px; margin: -4px 0 -8px -10px; }
+.doneer-weg .knop { min-height: 40px; font-size: .85rem; color: var(--zacht); background: transparent; border-color: transparent; }
+.doneer-weg .knop:hover { color: var(--tekst); text-decoration: underline; }
+.doneer-dank { margin: 0; padding: 12px 16px; border-radius: 8px; background: var(--vlak); border: 1px solid var(--accent); }
+#doneren + .doneer-dank, .doneer.vast + .doneer-dank { margin-top: 24px; }
+@media (max-width: 480px) { .doneer-knop { flex-direction: column; align-items: stretch; } .doneer-knop .hint { text-align: center; } }

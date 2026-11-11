@@ -6,7 +6,7 @@ var VERSIE = 'betaalqr-dev';
 var BESTANDEN = [
   './', 'index.html', 'controleer.html', 'style.css', 'app.js', 'epc.js', 'versie.js', 'vendor/qrcode.js',
   'factuur.js', 'herinnering.js', 'pdflezer.mjs', 'vendor/pdfjs/pdf.min.mjs', 'vendor/pdfjs/pdf.worker.min.mjs', 'vendor/jsqr/jsQR.js',
-  'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'
+  'beeld/henri.jpg', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'
 ];
 
 self.addEventListener('install', function (e) {
