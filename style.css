@@ -281,3 +281,9 @@ footer { margin-top: 28px; color: var(--zacht); font-size: .85rem; }
 .doneer h2 { margin: 0 0 4px; font-size: 1rem; }
 .doneer p { margin: 0; color: var(--zacht); }
 .doneer p + p { margin-top: 6px; }
+
+/* later betalen (stap 3) */
+.later { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--rand-licht); padding-top: 18px; }
+.later h2 { margin: 0; font-size: 1rem; }
+.datum-veld { max-width: 240px; }
+.datum-tip { margin: 0; font-size: .92rem; }

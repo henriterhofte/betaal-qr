@@ -116,6 +116,39 @@ def facturen(pg, basis: str) -> None:
             meld(f"{d}-{m}-{j}" in c["verval"], f"{pdf.name}: betalen vóór {c['verval']!r}")
         if "waarschuwing" in verwacht:
             meld(verwacht["waarschuwing"] in c["waarschuwingen"], f"{pdf.name}: waarschuwing '{verwacht['waarschuwing']}'")
+        if "vervaldatum" in verwacht:
+            herinnering(pg, pdf.name, verwacht)
+
+
+def herinnering(pg, naam: str, verwacht: dict) -> None:
+    """Stap 3: datum vooraf ingevuld; .ics downloaden en met icalendar (onafhankelijk) controleren."""
+    pg.click("#naar3")
+    meld(pg.input_value("#betaaldatum") == verwacht["vervaldatum"], f"{naam}: betaaldatum in stap 3 = {pg.input_value('#betaaldatum')!r}")
+    pg.fill("#betaaldatum", "2026-12-01")   # de datum moet aan te passen zijn
+    with pg.expect_download() as dl:
+        pg.click("#ics")
+    data = Path(dl.value.path()).read_bytes()
+    try:
+        from icalendar import Calendar
+    except ImportError:
+        print("     .ics-controle overgeslagen (icalendar ontbreekt)")
+        return
+    ev = Calendar.from_ical(data).walk("VEVENT")[0]
+    beschrijving = str(ev.get("DESCRIPTION"))
+    bijlage = ev.get("ATTACH")
+    meld(str(ev.decoded("DTSTART")) == "2026-12-01", f"{naam}: .ics op aangepaste datum ({ev.decoded('DTSTART')})")
+    meld(verwacht["iban"] in beschrijving and verwacht["bedrag"] in beschrijving, f"{naam}: .ics bevat IBAN en bedrag")
+    meld(bijlage is not None and data.count(b"BEGIN:VALARM") == 2, f"{naam}: .ics heeft QR-bijlage en twee meldingen")
+    if bijlage is not None:
+        try:
+            import cv2
+            import numpy as np
+            png = base64.b64decode(bijlage.to_ical()) if not isinstance(bijlage, bytes) else bijlage
+            beeld = cv2.imdecode(np.frombuffer(png, np.uint8), cv2.IMREAD_GRAYSCALE)
+            tekst, _, _ = cv2.QRCodeDetector().detectAndDecode(beeld)
+            meld(tekst.startswith("BCD") and verwacht["iban"].replace(" ", "") in tekst, f"{naam}: QR in de .ics is leesbaar en klopt")
+        except ImportError:
+            pass
 
 
 def eigen(pg, basis: str, paden: list[str]) -> None:

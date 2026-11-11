@@ -13,6 +13,7 @@
   <script src="vendor/qrcode.js"></script>
   <script src="epc.js"></script>
   <script src="factuur.js"></script>
+  <script src="herinnering.js"></script>
   <script>
     var regels = [], mis = 0;
     function gelijk(naam, echt, verwacht) {
@@ -126,6 +127,26 @@
     gelijk('factuur zonder gegevens', Object.keys(leeg.velden).length, 0);
     gelijk('bedragen in tekst', Factuur.bedragenIn('BTW 9 % (€ 5.654,56) € 508,91'), [565456, 50891]);
     gelijk('IBAN met spaties en rommel erachter', Factuur.ibansIn('IBAN: NL23 RABO 0105 5028 55 BIC: RABONL2U'), ['NL23RABO0105502855']);
+
+    // ---- herinnering.js: .ics ----
+    var ics = Herinnering.maak(r.velden, '2026-11-25', 'AAAA', { uid: 'test', nu: new Date(Date.UTC(2026, 10, 11, 12, 0, 0)), url: 'https://betaal.terhofte.net/' });
+    var ontvouwd = ics.replace(/\r\n /g, '');
+    gelijk('ics: CRLF overal', /[^\r]\n/.test(ics), false);
+    gelijk('ics: regels hooguit 75 octets', ics.split('\r\n').every(function (l) { return new TextEncoder().encode(l).length <= 75; }), true);
+    gelijk('ics: hele dag op betaaldatum', /DTSTART;VALUE=DATE:20261125\r\nDTEND;VALUE=DATE:20261126/.test(ontvouwd), true);
+    gelijk('ics: titel', ontvouwd.indexOf('SUMMARY:Betalen: € 9.669\\,30 aan B.V. Bouwbedrijf Hoffman Beltrum-Zutphen (Factuur 2632601)') > 0, true);
+    var lange = Herinnering.maak({ naam: 'Stichting Met Een Bijzonder Lange Naam Voor Een Test', iban: 'NL23RABO0105502855', centen: 500, omschrijving: 'x' }, '2026-11-25', null, { uid: 't', nu: new Date(0) });
+    gelijk('ics: lange naam ingekort in titel', lange.replace(/\r\n /g, '').indexOf('aan Stichting Met Een Bijzonder Lange Naam… (x)') > 0, true);
+    gelijk('ics: zonder QR geen bijlage', lange.indexOf('ATTACH') < 0, true);
+    gelijk('ics: IBAN in beschrijving', ontvouwd.indexOf('IBAN: NL23 RABO 0105 5028 55') > 0, true);
+    gelijk('ics: QR-bijlage', ontvouwd.indexOf('ATTACH;FMTTYPE=image/png;ENCODING=BASE64;VALUE=BINARY;X-FILENAME=betaal-qr.png:AAAA') > 0, true);
+    gelijk('ics: twee meldingen', (ontvouwd.match(/BEGIN:VALARM/g) || []).length, 2);
+    gelijk('ics: datum als tekst', Herinnering.datumTekst('2026-11-25'), 'woensdag 25-11-2026');
+    gelijk('ics: escapen', Herinnering.esc('a;b,c\\d\ne'), 'a\\;b\\,c\\\\d\\ne');
+    var lang = Herinnering.vouw('DESCRIPTION:' + new Array(60).join('ë'));
+    gelijk('ics: vouwen splitst geen tekens', lang.replace(/\r\n /g, ''), 'DESCRIPTION:' + new Array(60).join('ë'));
+    var foutDatum = false; try { Herinnering.maak(r.velden, '25-11-2026'); } catch (e) { foutDatum = true; }
+    gelijk('ics: ongeldige datum geweigerd', foutDatum, true);
 
     var qr = qrcode(0, 'M'); qr.addData(r.payload, 'Byte'); qr.make();
     gelijk('QR gemaakt', qr.getModuleCount() >= 21, true);

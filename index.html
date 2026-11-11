@@ -173,6 +173,20 @@
           <span>Vergelijk in je bank-app het IBAN met de <b>factuur</b>, niet met deze pagina. Waarschuwt de naam-nummercontrole van je bank? Niet betalen.</span>
         </div>
 
+        <div class="later" aria-labelledby="later-kop">
+          <h2 id="later-kop">Later betalen?</h2>
+          <div class="veld datum-veld">
+            <label for="betaaldatum">Betaaldatum</label>
+            <input type="date" id="betaaldatum">
+            <p class="hint" id="datum-herkomst"></p>
+          </div>
+          <p id="datum-tip" class="datum-tip"></p>
+          <div class="acties links">
+            <button type="button" id="ics" class="knop">Herinnering in je agenda (.ics)</button>
+          </div>
+          <p class="hint">In de herinnering staan de QR-code (als bijlage) en alle gegevens om te betalen, ook als je niet kunt scannen. Wordt je agenda online bijgehouden (Google, Outlook, iCloud), dan staan het IBAN en het bedrag daar ook.</p>
+        </div>
+
         <details class="inhoud">
           <summary>Inhoud van de QR-code</summary>
           <pre id="payload"></pre>
@@ -221,6 +235,7 @@
   <script src="vendor/qrcode.js"></script>
   <script src="epc.js"></script>
   <script src="factuur.js"></script>
+  <script src="herinnering.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

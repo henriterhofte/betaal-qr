@@ -297,7 +297,48 @@
     $('k-bedrag').textContent = kopieerTekst('bedrag');
     $('k-oms').textContent = kopieerTekst('omschrijving') || '—';
     $('payload').textContent = r.payload;
+    var verval = herkenning && herkenning.vervaldatum;
+    $('betaaldatum').value = verval || '';
+    $('datum-herkomst').textContent = verval ? 'Uit de factuur. Je kunt de datum aanpassen.' : '';
+    werkDatumBij();
   }
+
+  // ---- later betalen: aanwijzing voor de bank-app en een agendaherinnering ----
+  function vandaagIso() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function werkDatumBij() {
+    var d = $('betaaldatum').value;
+    var tip = $('datum-tip');
+    $('ics').disabled = !d;
+    if (!d) {
+      tip.textContent = 'Kies een datum om een herinnering te maken.';
+    } else if (d < vandaagIso()) {
+      tip.textContent = 'Let op: ' + Herinnering.datumTekst(d) + ' is al voorbij. Betaal zo snel mogelijk.';
+    } else if (d === vandaagIso()) {
+      tip.textContent = 'Vandaag betalen.';
+    } else {
+      tip.textContent = 'Wil je het nu al regelen? Scan de code en kies in je bank-app als datum ' + Herinnering.datumTekst(d) +
+        ' (heet vaak "Later uitvoeren", "Datum" of "Inplannen"). Of zet een herinnering in je agenda.';
+    }
+  }
+  $('betaaldatum').addEventListener('input', function () {
+    $('datum-herkomst').textContent = herkenning && herkenning.vervaldatum && this.value !== herkenning.vervaldatum ? 'Door jou aangepast.' : $('datum-herkomst').textContent;
+    werkDatumBij();
+  });
+  $('ics').addEventListener('click', function () {
+    var d = $('betaaldatum').value;
+    if (!laatste || !d) return;
+    var png = $('qr').toDataURL('image/png').split(',')[1];
+    var ics = Herinnering.maak(laatste.velden, d, png, { url: location.origin + '/' });
+    var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = bestandsnaam().replace(/^betaal-qr-/, 'betalen-').replace(/\.png$/, '.ics');
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
 
   function tekenQr(payload) {
     var qr = qrcode(0, 'M');
