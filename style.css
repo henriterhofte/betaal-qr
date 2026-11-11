@@ -368,3 +368,13 @@ form.geblokkeerd .bedrag-invoer input { background: transparent; border-style: n
 .factuur-knoppen { display: flex; flex-wrap: wrap; gap: 8px; }
 .factuur-knoppen label.knop { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
 @media (max-width: 480px) { .factuur-knoppen { width: 100%; } .factuur-knoppen label.knop { flex: 1 1 140px; justify-content: center; } }
+
+/* Slogan en knoppen per apparaat: telefoon (aanraakscherm, geen muis) of laptop. */
+.voor-telefoon { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .voor-telefoon { display: block; }
+  .voor-laptop { display: none; }
+  /* Op de telefoon is een foto de makkelijkste route: die knop vooraan en in de hoofdkleur. */
+  .factuur-knoppen label[for="factuur-foto"] { order: -1; background: var(--accent); border-color: var(--accent); color: var(--accent-tekst); }
+}
+.factuur-knoppen label.knop { white-space: nowrap; }
