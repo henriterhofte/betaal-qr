@@ -243,6 +243,11 @@
       herkenning = null;
       return;
     }
+    if (!invoerWaarden.iban && res.ocr) {
+      factuurStatus('Met tekstherkenning gelezen uit ' + bestand.name + ', maar er is geen rekeningnummer gevonden. Op een foto of scan zijn kleine letters (vaak onderaan) soms niet scherp genoeg: maak dan een scherpere foto, of vul het IBAN zelf in. Staat er echt geen rekeningnummer op, dan is de factuur vaak al betaald of gaat hij via incasso.', 'let-op');
+      $('iban').focus();
+      return;
+    }
     if (!invoerWaarden.iban) {
       factuurStatus('Gelezen uit ' + bestand.name + ', maar er staat geen rekeningnummer op de factuur. Vaak betekent dat: al betaald (bijvoorbeeld in een webshop) of automatische incasso. Kijk op de factuur. Moet je wel betalen, vul het rekeningnummer dan zelf in.', 'let-op');
       $('iban').focus();

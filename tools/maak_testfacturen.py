@@ -256,7 +256,7 @@ def main() -> None:
     scan = als_beeld(t1)
     bestanden = {
         "foto-kolommen.jpg": (als_foto(scan), verwacht_ocr),
-        "scan-kolommen.pdf": (pdf_met_volle_afbeelding(scan.resize((round(595 * 2), round(842 * 2)))), verwacht_ocr),
+        "scan-kolommen.pdf": (pdf_met_volle_afbeelding(scan), verwacht_ocr),   # ± 180 dpi, gangbaar voor een scanner
     }
 
     for naam, (data, verwacht) in facturen.items():
