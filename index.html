@@ -28,6 +28,11 @@
       <b>Deze pagina is in een andere site ingebed.</b> Dat hoort niet. Open Betaal-QR rechtstreeks op <a href="https://betaal.terhofte.net/" target="_top" rel="noopener">betaal.terhofte.net</a>.
     </div>
 
+    <div id="nieuwe-versie" class="nieuwe-versie" role="status" hidden>
+      <span>Er is een nieuwe versie van Betaal-QR.</span>
+      <button type="button" id="vernieuw" class="knop hoofd">Vernieuwen</button>
+    </div>
+
     <div id="app">
       <ol class="stappen" aria-label="Voortgang">
         <li data-stap="1"><span class="streep"></span><span class="label">1 · Invullen</span></li>
@@ -38,6 +43,17 @@
       <!-- stap 1 -->
       <section class="kaart" id="stap1" aria-labelledby="kop1">
         <h1 id="kop1" tabindex="-1">Nieuwe betaling</h1>
+
+        <div class="factuur-lezen" id="factuur-zone">
+          <div class="factuur-tekst">
+            <b>Factuur als PDF?</b>
+            <span>Dan vult Betaal-QR de gegevens voor je in. De PDF wordt alleen op dit apparaat gelezen.</span>
+          </div>
+          <label class="knop" for="factuur-bestand">Factuur openen…</label>
+          <input type="file" id="factuur-bestand" accept="application/pdf,.pdf" class="verborgen">
+        </div>
+        <div id="factuur-status" class="factuur-status" aria-live="polite" hidden></div>
+
         <form id="form" autocomplete="off" novalidate>
           <div class="veld" id="veld-opgeslagen">
             <label for="opgeslagen">Bewaarde ontvanger</label>
@@ -100,7 +116,12 @@
           <div><dt>Aan</dt><dd id="c-naam"></dd></div>
           <div><dt>IBAN</dt><dd class="mono" id="c-iban"></dd></div>
           <div><dt>Omschrijving</dt><dd id="c-oms"></dd></div>
+          <div id="c-verval-rij" hidden><dt>Betalen vóór</dt><dd id="c-verval"></dd></div>
         </dl>
+        <details id="c-herkomst" class="herkomst" hidden>
+          <summary>Waar komen deze gegevens vandaan?</summary>
+          <ul id="c-herkomst-lijst"></ul>
+        </details>
         <ul id="waarschuwingen" class="waarschuwingen"></ul>
         <div class="melding-let-op">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"></path><path d="M12 10v5M12 18v.01"></path></svg>
@@ -169,6 +190,7 @@
       <ul>
         <li><b>De code wordt in deze browser gemaakt.</b> Naam, IBAN, bedrag en omschrijving gaan nergens heen, ook niet naar deze site.</li>
         <li><b>De browser dwingt dat af.</b> De pagina mag geen verbindingen maken en geen formulieren versturen (zie hieronder). Ook als er per ongeluk code in zou zitten die dat wil, houdt de browser het tegen.</li>
+        <li><b>Een factuur (PDF) die je opent</b>, wordt in deze browser gelezen en nergens heen gestuurd. De PDF-lezer (pdf.js) wordt pas geladen als je een factuur kiest.</li>
         <li><b>Bewaarde ontvangers</b> staan alleen in de opslag van deze browser op dit apparaat: niet in een cookie, niet op een server.</li>
         <li><b>Werkt offline.</b> <span id="offline">Na het eerste bezoek werkt de pagina ook zonder internet.</span> Probeer het: zet de wifi uit en maak een code.</li>
         <li><b>Geen cookies, geen statistieken, niets van andere sites.</b></li>
@@ -182,12 +204,13 @@
 
     <footer class="voet">
       <p>Dit is geen betaaldienst. De pagina zet alleen de gegevens die je invult om in een QR-code. Betalen doe je zelf in je bank-app, en je bank voert de betaling uit. Gebruik op eigen risico, zonder garantie (EUPL-1.2).</p>
-      <p>Standaard: EPC069-12 (SEPA Credit Transfer, versie 002). Licentie: EUPL-1.2. QR-bibliotheek: qrcode-generator 1.4.4 van Kazuhiko Arase (MIT). <a href="https://github.com/henriterhofte/betaal-qr">Broncode</a></p>
+      <p>Standaard: EPC069-12 (SEPA Credit Transfer, versie 002). Licentie: EUPL-1.2. Bibliotheken: qrcode-generator 1.4.4 van Kazuhiko Arase (MIT), pdf.js 4.10.38 van Mozilla en jsQR 1.4.0 (Apache-2.0). <a href="https://github.com/henriterhofte/betaal-qr">Broncode</a></p>
     </footer>
   </main>
   <script src="versie.js"></script>
   <script src="vendor/qrcode.js"></script>
   <script src="epc.js"></script>
+  <script src="factuur.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

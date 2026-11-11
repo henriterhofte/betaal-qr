@@ -5,11 +5,16 @@
 var VERSIE = 'betaalqr-dev';
 var BESTANDEN = [
   './', 'index.html', 'controleer.html', 'style.css', 'app.js', 'epc.js', 'versie.js', 'vendor/qrcode.js',
+  'factuur.js', 'pdflezer.mjs', 'vendor/pdfjs/pdf.min.mjs', 'vendor/pdfjs/pdf.worker.min.mjs', 'vendor/jsqr/jsQR.js',
   'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'
 ];
 
 self.addEventListener('install', function (e) {
-  e.waitUntil(caches.open(VERSIE).then(function (c) { return c.addAll(BESTANDEN); }).then(function () { return self.skipWaiting(); }));
+  // cache: 'reload' haalt elk bestand vers van de server, niet uit de HTTP-cache van de browser
+  // (GitHub Pages laat bestanden 10 minuten cachen; zonder dit kon een update half oud zijn).
+  e.waitUntil(caches.open(VERSIE).then(function (c) {
+    return c.addAll(BESTANDEN.map(function (u) { return new Request(u, { cache: 'reload' }); }));
+  }).then(function () { return self.skipWaiting(); }));
 });
 
 self.addEventListener('activate', function (e) {

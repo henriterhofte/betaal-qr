@@ -22,7 +22,8 @@
       <li>De QR-code wordt in je eigen browser gemaakt. Naam, IBAN, bedrag en omschrijving worden nergens heen gestuurd, ook niet naar betaal.terhofte.net.</li>
       <li>Opgeslagen ontvangers staan alleen in de opslag van je eigen browser (localStorage). Er zijn geen cookies, geen statistieken en geen accounts.</li>
       <li>De site laadt alleen zijn eigen bestanden: geen scripts, lettertypen of beelden van andere sites.</li>
-      <li>De broncode is openbaar (<a href="https://github.com/henriterhofte/betaal-qr">GitHub</a>, EUPL-1.2) en klein: één pagina en een paar honderd regels JavaScript, plus de QR-bibliotheek.</li>
+      <li>De broncode is openbaar (<a href="https://github.com/henriterhofte/betaal-qr">GitHub</a>, EUPL-1.2) en klein: één pagina en een paar honderd regels JavaScript, plus drie ongewijzigde bibliotheken (zie 6).</li>
+      <li>Een factuur (PDF) die je opent, wordt alleen in je browser gelezen. Het bestand gaat nergens heen; de pagina mag ook dan geen verbindingen maken.</li>
     </ul>
 
     <h2><span class="nr">2</span>Kijk zelf naar het netwerkverkeer</h2>
@@ -31,6 +32,7 @@
       <li>Open Betaal-QR en druk op <kbd>F12</kbd> (Mac: <kbd>Cmd</kbd>+<kbd>Option</kbd>+<kbd>I</kbd>). Kies het tabblad <b>Netwerk</b> (Network) en laad de pagina opnieuw.</li>
       <li>Je ziet alleen bestanden van betaal.terhofte.net langskomen.</li>
       <li>Wis de lijst en vul een betaling in. Er komen geen nieuwe verzoeken bij, ook niet als de QR-code verschijnt of als je een ontvanger bewaart.</li>
+      <li>Open een factuur (PDF). De eerste keer zie je de PDF-lezer (<code>pdflezer.mjs</code> en de bestanden van pdf.js en jsQR) van betaal.terhofte.net komen. Je factuur zelf zie je niet langskomen: die wordt niet verstuurd.</li>
       <li>Nog eenvoudiger: zet de wifi uit (of vliegtuigmodus aan) en maak een code. Na het eerste bezoek werkt alles gewoon.</li>
     </ol>
 
@@ -75,15 +77,22 @@ gh attestation verify sha256.json --repo henriterhofte/betaal-qr</pre>
       <p>Bij succes staat er welke workflow en welke commit het bestand hebben gebouwd.</p>
     </div>
 
-    <h2><span class="nr">6</span>De QR-bibliotheek: ongewijzigd</h2>
-    <p>De QR-code wordt getekend met <a href="https://github.com/kazuhikoarase/qrcode-generator">qrcode-generator</a> 1.4.4 van Kazuhiko Arase (MIT). Een vaste kopie staat in de repository (<code>vendor/qrcode.js</code>), dus er wordt niets van een CDN geladen. Het bestand is byte voor byte gelijk aan dat in de officiële npm-release:</p>
+    <h2><span class="nr">6</span>De bibliotheken: ongewijzigd</h2>
+    <p>Betaal-QR gebruikt drie bibliotheken van anderen. Van elk staat een vaste kopie in de repository (<code>vendor/</code>), dus er wordt niets van een CDN geladen. Elk bestand is byte voor byte gelijk aan dat in de officiële npm-release:</p>
     <table>
-      <tr><th>bestand</th><th>SHA-256</th></tr>
-      <tr><td>vendor/qrcode.js</td><td class="h">18ae399f81182bc9de916e9c77b195df20cc58d6f2d55a62b085a299f1bf1780</td></tr>
+      <tr><th>bestand</th><th>waarvoor</th><th>SHA-256</th></tr>
+      <tr><td>vendor/qrcode.js</td><td><a href="https://github.com/kazuhikoarase/qrcode-generator">qrcode-generator</a> 1.4.4 (Kazuhiko Arase, MIT): de QR-code tekenen</td><td class="h">18ae399f81182bc9de916e9c77b195df20cc58d6f2d55a62b085a299f1bf1780</td></tr>
+      <tr><td>vendor/pdfjs/pdf.min.mjs</td><td rowspan="2"><a href="https://mozilla.github.io/pdf.js/">pdf.js</a> 4.10.38 (Mozilla, Apache-2.0): een factuur-PDF lezen</td><td class="h">27fc2a057a00f92a4334ad06e17dbd7259912954e9fb7f76400bcca5fd190a9c</td></tr>
+      <tr><td>vendor/pdfjs/pdf.worker.min.mjs</td><td class="h">1baa1844c89c80a5b2797c916e75ab29254be46d8e9cb53cb6364d7aad84be36</td></tr>
+      <tr><td>vendor/jsqr/jsQR.js</td><td><a href="https://github.com/cozmo/jsQR">jsQR</a> 1.4.0 (Apache-2.0): een betaal-QR op de factuur lezen</td><td class="h">bc40c8a15196236b2314db0856f72ca0b49980cd5413b8c852a7349f5fee0859</td></tr>
     </table>
+    <p>pdf.js en jsQR worden pas geladen als je een factuur opent. pdf.js draait met <code>isEvalSupported: false</code> en zonder webfonts, zodat het binnen de Content-Security-Policy blijft.</p>
     <div class="tech">
       <b>Zelf nagaan</b>
-<pre>curl -sL https://registry.npmjs.org/qrcode-generator/-/qrcode-generator-1.4.4.tgz | tar xzO package/qrcode.js | sha256sum</pre>
+<pre>curl -sL https://registry.npmjs.org/qrcode-generator/-/qrcode-generator-1.4.4.tgz | tar xzO package/qrcode.js | sha256sum
+curl -sL https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.10.38.tgz | tar xzO package/build/pdf.min.mjs | sha256sum
+curl -sL https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.10.38.tgz | tar xzO package/build/pdf.worker.min.mjs | sha256sum
+curl -sL https://registry.npmjs.org/jsqr/-/jsqr-1.4.0.tgz | tar xzO package/dist/jsQR.js | sha256sum</pre>
     </div>
 
     <h2><span class="nr">7</span>Wat dit niet dekt</h2>
@@ -92,6 +101,7 @@ gh attestation verify sha256.json --repo henriterhofte/betaal-qr</pre>
         <li><b>Je browser, je besturingssysteem en je extensies</b> vertrouw je. Een kwaadwillende browserextensie kan meekijken op elke pagina, ook op deze.</li>
         <li><b>GitHub</b> is de host en de bouwer. De attestatie en de weekcontrole maken misbruik zichtbaar, maar voorkomen niet dat er tussen twee controles iets anders wordt geleverd. Wie dat wil uitsluiten, opent de app uit een eigen build: <code>python tools/bouw.py</code> en dan <code>python -m http.server -d _site</code>.</li>
         <li><b>De code is niet door anderen beoordeeld.</b> Een gelijke vingerafdruk bewijst dat de site uit de broncode komt, niet dat de broncode goed is. Juist daarom is hij klein gehouden.</li>
+        <li><b>Herkenning is geen controle.</b> Uit een valse factuur leest Betaal-QR net zo goed een IBAN als uit een echte. Daarom blijft de stap "Klopt deze betaling?" verplicht, met de herkomst van elk gegeven.</li>
         <li><b>Een kwaadwillende kopie</b> van deze site (de code is openbaar) zou een ander IBAN in de QR-code kunnen zetten dan op het scherm staat. Vergelijk daarom altijd in je <b>bank-app</b> het IBAN met de factuur, en let op de naam-nummercontrole. Dat geldt ook voor deze site.</li>
         <li><b>Bewust weggelaten:</b> links met vooraf ingevulde gegevens. Die zouden oplichters kunnen gebruiken ("betaal via deze link"). Daarnaast weigert de app te werken als hij in een andere site is ingebed (clickjacking).</li>
         <li><b>Geen betaaldienst.</b> Betaal-QR maakt alleen een plaatje van de gegevens die je invult. Je bank voert de betaling uit, nadat jij hem in de bank-app hebt bevestigd.</li>

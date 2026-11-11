@@ -147,8 +147,24 @@
     };
   }
 
+  // Een bestaande EPC-QR lezen (bijvoorbeeld van een factuur). Geeft null als het geen geldige
+  // SEPA-overschrijving is. Versie 001 (BIC verplicht) en 002; tekenset 1 (UTF-8) of anders.
+  function lees(tekst) {
+    var r = String(tekst || '').replace(/\r\n?/g, '\n').split('\n');
+    if (r[0] !== 'BCD' || !/^00[12]$/.test(r[1] || '') || r[3] !== 'SCT') return null;
+    var iban = normaliseerIban(r[6]);
+    if (!ibanGeldig(iban)) return null;
+    var centen = null;
+    var m = /^EUR(\d{1,9})(?:\.(\d{1,2}))?$/.exec(r[7] || '');
+    if (m) centen = parseInt(m[1], 10) * 100 + parseInt(((m[2] || '') + '00').slice(0, 2), 10);
+    return {
+      bic: normaliseerIban(r[4]), naam: String(r[5] || '').trim(), iban: iban, centen: centen,
+      kenmerk: String(r[9] || '').trim(), omschrijving: String(r[10] || '').trim()
+    };
+  }
+
   root.EPC = {
-    maak: maak, ibanGeldig: ibanGeldig, normaliseerIban: normaliseerIban, formatteerIban: formatteerIban,
+    maak: maak, lees: lees, ibanGeldig: ibanGeldig, normaliseerIban: normaliseerIban, formatteerIban: formatteerIban,
     bedragInCenten: bedragInCenten, centenNaarTekst: centenNaarTekst, rfKenmerkGeldig: rfKenmerkGeldig,
     sepaTekst: sepaTekst
   };

@@ -101,11 +101,122 @@
   $('wis').addEventListener('click', function () {
     velden.forEach(function (v) { $(v).value = ''; });
     aangeraakt = {};
+    herkenning = null;
+    factuurStatus('');
     $('opgeslagen').value = '';
     $('verwijder').disabled = true;
     controleer();
     $('naam').focus();
   });
+
+  // ---- factuur (PDF) lokaal lezen ----
+  // herkenning: wat uit de laatst gelezen factuur kwam, om in stap 2 de herkomst te tonen.
+  var herkenning = null;
+  var VELDNAMEN = { naam: 'Naam', iban: 'IBAN', bic: 'BIC', bedrag: 'Bedrag', omschrijving: 'Omschrijving' };
+
+  function factuurStatus(tekst, soort) {
+    var s = $('factuur-status');
+    s.hidden = !tekst;
+    s.className = 'factuur-status' + (soort ? ' ' + soort : '');
+    s.textContent = tekst || '';
+  }
+
+  function bedragAlsInvoer(c) {
+    return c == null ? '' : EPC.centenNaarTekst(c).replace('€ ', '');
+  }
+
+  async function leesFactuur(bestand) {
+    if (!bestand) return;
+    if (!/pdf$/i.test(bestand.type) && !/\.pdf$/i.test(bestand.name)) { factuurStatus('Dit is geen PDF. Kies een factuur als PDF-bestand.', 'fout'); return; }
+    if (bestand.size > 25 * 1024 * 1024) { factuurStatus('Deze PDF is groter dan 25 MB; dat is voor een factuur ongebruikelijk.', 'fout'); return; }
+    factuurStatus('Factuur wordt gelezen…');
+    var res;
+    try {
+      var mod = await import('./pdflezer.mjs');
+      res = await mod.leesPdf(await bestand.arrayBuffer());
+    } catch (e) {
+      var wachtwoord = e && /password/i.test(e.name + ' ' + e.message);
+      factuurStatus(wachtwoord ? 'Deze PDF is met een wachtwoord beveiligd. Vul de gegevens zelf in.'
+        : 'Deze PDF kon niet worden gelezen. Vul de gegevens zelf in.', 'fout');
+      return;
+    }
+
+    var a = Factuur.analyseer(res.paginas);
+    var g = a.velden, bron = Object.assign({}, a.bron), meldingen = a.waarschuwingen.map(function (t) { return { t: t }; });
+    var uit = { naam: g.naam || '', iban: g.iban || '', bic: g.bic || '', centen: g.centen, omschrijving: Factuur.omschrijving(g) };
+    if (g.kenmerk) bron.omschrijving = bron.kenmerk; else if (g.factuurnummer) bron.omschrijving = bron.factuurnummer;
+    bron.bedrag = bron.centen;
+
+    // Een EPC-QR op de factuur is exact; vergelijk hem wel met de tekst (een opgeplakte QR is een bekende fraudetruc).
+    var qr = null;
+    res.qrCodes.some(function (q) { var l = EPC.lees(q.tekst); if (l) { qr = l; qr.pagina = q.pagina; } return !!l; });
+    if (qr) {
+      var qrBron = 'betaal-QR-code op de factuur, pagina ' + qr.pagina;
+      if (g.iban && g.iban !== qr.iban) meldingen.push({ t: 'Het IBAN in de QR-code op de factuur (' + EPC.formatteerIban(qr.iban) + ') is anders dan het IBAN in de tekst (' + EPC.formatteerIban(g.iban) + '). Dat kan op fraude wijzen. Bel de afzender op een nummer dat je al had.', ernstig: true });
+      if (g.centen != null && qr.centen != null && g.centen !== qr.centen) meldingen.push({ t: 'Het bedrag in de QR-code op de factuur (' + EPC.centenNaarTekst(qr.centen) + ') is anders dan het bedrag in de tekst (' + EPC.centenNaarTekst(g.centen) + ').', ernstig: true });
+      uit.iban = qr.iban; bron.iban = qrBron;
+      if (qr.naam) { uit.naam = qr.naam; bron.naam = qrBron; }
+      if (qr.bic) { uit.bic = qr.bic; bron.bic = qrBron; }
+      if (qr.centen != null) { uit.centen = qr.centen; bron.bedrag = qrBron; }
+      if (qr.kenmerk || qr.omschrijving) { uit.omschrijving = qr.kenmerk || qr.omschrijving; bron.omschrijving = qrBron; }
+    }
+
+    // Is dit IBAN al bekend? Dan de bewaarde naam gebruiken (betrouwbaarder dan een gok uit het briefhoofd).
+    var bekend = leesOntvangers().filter(function (o) { return o.iban === uit.iban; })[0];
+    if (bekend) { uit.naam = bekend.naam; bron.naam = 'je bewaarde ontvanger'; if (!uit.bic && bekend.bic) { uit.bic = bekend.bic; bron.bic = 'je bewaarde ontvanger'; } }
+    else if (uit.iban) meldingen.push({ t: 'Dit rekeningnummer staat nog niet bij je bewaarde ontvangers. Betaal je deze ontvanger voor het eerst? Controleer het rekeningnummer dan via een tweede bron, zoals hun website of een eerdere factuur.' });
+
+    var invoerWaarden = { naam: uit.naam, iban: uit.iban ? EPC.formatteerIban(uit.iban) : '', bic: uit.bic, bedrag: bedragAlsInvoer(uit.centen), omschrijving: uit.omschrijving };
+    velden.forEach(function (v) { $(v).value = invoerWaarden[v] || ''; aangeraakt[v] = !!invoerWaarden[v]; });
+    $('opgeslagen').value = bekend ? bekend.iban : '';
+    controleer();
+
+    herkenning = { bestand: bestand.name, waarden: invoerWaarden, bron: bron, meldingen: meldingen, vervaldatum: g.vervaldatum || null };
+
+    var gevonden = velden.filter(function (v) { return invoerWaarden[v]; });
+    var mist = ['naam', 'iban', 'bedrag', 'omschrijving'].filter(function (v) { return !invoerWaarden[v]; });
+    var tekstloos = res.paginas.every(function (p) { return p.regels.length === 0; });
+    if (tekstloos && !qr) {
+      factuurStatus('Deze PDF bevat geen tekst; waarschijnlijk is het een scan. Die kan Betaal-QR nog niet lezen. Vul de gegevens zelf in.', 'fout');
+      herkenning = null;
+      return;
+    }
+    if (!gevonden.length) {
+      factuurStatus('In ' + bestand.name + ' staan geen betaalgegevens die Betaal-QR herkent. Is het wel een factuur? Vul de gegevens zelf in.', 'let-op');
+      herkenning = null;
+      return;
+    }
+    factuurStatus('Gelezen uit ' + bestand.name + '. Gevonden: ' + (gevonden.map(function (v) { return VELDNAMEN[v].toLowerCase(); }).join(', ') || 'niets') + '.' +
+      (mist.length ? ' Niet gevonden: ' + mist.map(function (v) { return VELDNAMEN[v].toLowerCase(); }).join(', ') + '; vul die zelf in.' : '') +
+      ' Controleer alles met de factuur.', mist.length ? 'let-op' : 'ok');
+    var leeg = mist.filter(function (v) { return v !== 'omschrijving'; })[0];
+    $(leeg || 'naar2').focus();
+  }
+
+  $('factuur-bestand').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    this.value = '';   // dezelfde PDF nog eens kiezen moet ook werken
+    leesFactuur(f);
+  });
+  // Slepen en neerzetten op stap 1 (computer)
+  ['dragover', 'dragenter'].forEach(function (t) {
+    $('stap1').addEventListener(t, function (e) { if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types, 'Files') >= 0) { e.preventDefault(); $('factuur-zone').classList.add('sleep'); } });
+  });
+  ['dragleave', 'drop'].forEach(function (t) {
+    $('stap1').addEventListener(t, function () { $('factuur-zone').classList.remove('sleep'); });
+  });
+  $('stap1').addEventListener('drop', function (e) {
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!f) return;
+    e.preventDefault();
+    leesFactuur(f);
+  });
+
+  function datumTekst(iso) {
+    var d = new Date(iso + 'T12:00:00');
+    var dag = d.toLocaleDateString('nl-NL', { weekday: 'long' });
+    return dag + ' ' + iso.slice(8, 10) + '-' + iso.slice(5, 7) + '-' + iso.slice(0, 4);
+  }
 
   // ---- stap 2: controleren ----
   function vulControle(r) {
@@ -116,6 +227,28 @@
     $('c-oms').textContent = v.kenmerk ? 'Kenmerk ' + v.kenmerk : (v.omschrijving || '—');
     var ul = $('waarschuwingen'); ul.textContent = '';
     ibanWijzigingen(v).forEach(function (t) { meld(t).classList.add('ernstig'); });
+
+    // Herkomst en meldingen van een gelezen factuur (alleen voor velden die nog zo zijn als gelezen)
+    var lijst = $('c-herkomst-lijst'); lijst.textContent = '';
+    $('c-herkomst').hidden = !herkenning;
+    $('c-verval-rij').hidden = !(herkenning && herkenning.vervaldatum);
+    if (herkenning) {
+      if (herkenning.vervaldatum) $('c-verval').textContent = datumTekst(herkenning.vervaldatum);
+      velden.forEach(function (veld) {
+        var nu = $(veld).value.trim();
+        if (!nu) return;
+        var li = document.createElement('li');
+        var gelijk = nu === String(herkenning.waarden[veld] || '').trim();
+        li.textContent = VELDNAMEN[veld] + ': ' + (gelijk ? (herkenning.bron[veld] || 'uit ' + herkenning.bestand) : 'door jou ingevuld of aangepast');
+        lijst.appendChild(li);
+      });
+      if (herkenning.vervaldatum) {
+        var lv = document.createElement('li');
+        lv.textContent = 'Betalen vóór: ' + (herkenning.bron.vervaldatum || 'uit ' + herkenning.bestand);
+        lijst.appendChild(lv);
+      }
+      herkenning.meldingen.forEach(function (m) { var li = meld(m.t); if (m.ernstig) li.classList.add('ernstig'); });
+    }
     r.waarschuwingen.forEach(meld);
     var bekend = leesOntvangers().some(function (o) { return o.iban === v.iban; });
     $('bewaar').checked = false;
@@ -226,6 +359,8 @@
     velden.forEach(function (v) { $(v).value = ''; });
     aangeraakt = {};
     laatste = null;
+    herkenning = null;
+    factuurStatus('');
     $('opgeslagen').value = '';
     controleer();
     naarStap(1);
@@ -261,7 +396,20 @@
   $('kop1').blur();
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    navigator.serviceWorker.register('sw.js').then(function () {
+    // Updates: de browser kijkt bij elke start of sw.js veranderd is (de build zet de commit erin).
+    // Is er een nieuwe versie actief geworden terwijl deze pagina open is, dan bieden we vernieuwen aan;
+    // niet automatisch, want je kunt net iets aan het invullen zijn.
+    var hadVersie = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (hadVersie) $('nieuwe-versie').hidden = false;
+      hadVersie = true;
+    });
+    $('vernieuw').addEventListener('click', function () { location.reload(); });
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+      // Een geïnstalleerde app blijft vaak dagen open op de achtergrond: kijk ook bij terugkomen.
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') reg.update().catch(function () {});
+      });
       return navigator.serviceWorker.ready;
     }).then(function () {
       $('offline').textContent = 'Deze pagina staat nu ook offline op dit apparaat.';

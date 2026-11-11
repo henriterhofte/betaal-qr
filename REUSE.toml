@@ -13,3 +13,21 @@ SPDX-License-Identifier = "EUPL-1.2"
 path = "vendor/qrcode.js"
 SPDX-FileCopyrightText = "2009 Kazuhiko Arase"
 SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+# pdf.js 4.10.38 (npm pdfjs-dist), ongewijzigd; zie vendor/README.md.
+path = ["vendor/pdfjs/pdf.min.mjs", "vendor/pdfjs/pdf.worker.min.mjs", "vendor/pdfjs/LICENSE"]
+SPDX-FileCopyrightText = "2024 Mozilla Foundation"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+# jsQR 1.4.0 (npm jsqr), ongewijzigd; zie vendor/README.md.
+path = ["vendor/jsqr/jsQR.js", "vendor/jsqr/LICENSE"]
+SPDX-FileCopyrightText = "Cosmo Wolfe and jsQR contributors"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+# Verzonnen testfacturen (tools/maak_testfacturen.py) en wat de tests ervan verwachten.
+path = ["tests/facturen/*.pdf", "tests/facturen/*.json"]
+SPDX-FileCopyrightText = "2026 Henri ter Hofte"
+SPDX-License-Identifier = "EUPL-1.2"

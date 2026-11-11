@@ -25,7 +25,9 @@ from pathlib import Path
 
 BESTANDEN = [
     "index.html", "controleer.html", "style.css", "app.js", "epc.js", "sw.js",
-    "vendor/qrcode.js", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png",
+    "vendor/qrcode.js", "factuur.js", "pdflezer.mjs",
+    "vendor/pdfjs/pdf.min.mjs", "vendor/pdfjs/pdf.worker.min.mjs", "vendor/jsqr/jsQR.js",
+    "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png",
 ]
 
 

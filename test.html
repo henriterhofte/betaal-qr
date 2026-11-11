@@ -12,6 +12,7 @@
   <pre id="uitkomst"></pre>
   <script src="vendor/qrcode.js"></script>
   <script src="epc.js"></script>
+  <script src="factuur.js"></script>
   <script>
     var regels = [], mis = 0;
     function gelijk(naam, echt, verwacht) {
@@ -63,6 +64,68 @@
     gelijk('bedrag 0', Object.keys(EPC.maak({ naam: 'a', iban: 'NL23RABO0105502855', bedrag: '0' }).fouten), ['bedrag']);
     gelijk('omschrijving te lang', Object.keys(EPC.maak({ naam: 'a', iban: 'NL23RABO0105502855', bedrag: '1', omschrijving: new Array(142).join('x') }).fouten), ['omschrijving']);
     gelijk('waarschuwing aangepaste naam', EPC.maak({ naam: 'Café', iban: 'NL23RABO0105502855', bedrag: '1', omschrijving: 'x' }).waarschuwingen.length, 1);
+
+    // ---- EPC.lees: een bestaande QR-code lezen ----
+    var gelezen = EPC.lees(r.payload);
+    gelijk('EPC.lees: IBAN', gelezen && gelezen.iban, 'NL23RABO0105502855');
+    gelijk('EPC.lees: bedrag', gelezen && gelezen.centen, 966930);
+    gelijk('EPC.lees: naam', gelezen && gelezen.naam, 'B.V. Bouwbedrijf Hoffman Beltrum-Zutphen');
+    gelijk('EPC.lees: omschrijving', gelezen && gelezen.omschrijving, 'Factuur 2632601');
+    gelijk('EPC.lees: geen EPC', EPC.lees('https://example.org'), null);
+    gelijk('EPC.lees: fout IBAN', EPC.lees('BCD\n002\n1\nSCT\n\nX\nNL23RABO0105502856\nEUR1.00'), null);
+
+    // ---- factuur.js: herkenning op tekstregels (opbouw zoals pdflezer.mjs ze maakt) ----
+    function pagina(nr, rijen, hoogte) {
+      return { nr: nr, hoogte: hoogte || 842, regels: rijen.map(function (r) {
+        var delen = r[1].map(function (d) { return { x: d[0], w: d[1].length * 5, s: d[1] }; });
+        return { y: r[0], delen: delen, tekst: delen.map(function (d) { return d.s; }).join(' ') };
+      }) };
+    }
+    var p1 = pagina(1, [
+      [46, [[94, 'Voorbeeld Schilders B.V.']]],
+      [166, [[94, 'Dhr. J. Klant']]],
+      [252, [[94, 'Factuurnummer'], [242, 'Uw ordernummer'], [448, 'Datum']]],
+      [264, [[94, '2026-0417'], [448, '11-11-2026']]],
+      [400, [[94, 'Totaal excl. BTW'], [498, '1.250,00']]],
+      [417, [[94, 'BTW 21 %'], [498, '262,50']]],
+      [440, [[94, 'Totaal factuurbedrag'], [457, '€'], [498, '1.512,50']]],
+      [732, [[94, 'Betalingscondities:'], [200, 'Betalingen binnen 14'], [271, 'dagen na factuurdatum.']]],
+      [807, [[94, 'T. 012-3456789'], [200, 'IBAN: NL91 ABNA 0417 1643 00'], [320, 'BTWnr. NL00 123 4567 B01']]],
+      [815, [[200, 'BIC:'], [221, 'ABNANL2A']]]
+    ]);
+    var p2 = pagina(2, [[130, [[84, 'Totaal inclusief B.T.W.: € 1.512,46']]]]);
+    var f = Factuur.analyseer([p1, p2]);
+    gelijk('factuur: naam uit briefhoofd', f.velden.naam, 'Voorbeeld Schilders B.V.');
+    gelijk('factuur: IBAN uit voettekst', f.velden.iban, 'NL91ABNA0417164300');
+    gelijk('factuur: BTW-nummer is geen IBAN', (f.alternatieven.iban || []).length, 0);
+    gelijk('factuur: BIC', f.velden.bic, 'ABNANL2A');
+    gelijk('factuur: totaal factuurbedrag wint van bijlage', f.velden.centen, 151250);
+    gelijk('factuur: factuurnummer onder label', f.velden.factuurnummer, '2026-0417');
+    gelijk('factuur: factuurdatum onder label', f.velden.factuurdatum, '2026-11-11');
+    gelijk('factuur: vervaldatum = datum + 14 dagen', f.velden.vervaldatum, '2026-11-25');
+    gelijk('factuur: omschrijving', Factuur.omschrijving(f.velden), 'Factuur 2026-0417');
+
+    var g = Factuur.analyseer([pagina(1, [
+      [40, [[60, 'Groen Dak Installaties BV']]],
+      [200, [[60, 'Factuurnr.: F-8812'], [400, 'Factuurdatum: 02-11-2026']]],
+      [300, [[60, 'Te betalen'], [450, '2.904,00']]],
+      [320, [[60, 'Betalingskenmerk: 1234 5678 9012 3456']]],
+      [330, [[60, 'Vervaldatum 30-11-2026']]],
+      [340, [[60, 'Uw rekening NL20 INGB 0001 2345 67 wordt niet belast.']]],
+      [800, [[60, 'Graag overmaken naar NL44 RABO 0123 4567 89 t.n.v. Groen Dak Installaties BV']]]
+    ])]);
+    gelijk('factuur 2: te betalen', g.velden.centen, 290400);
+    gelijk('factuur 2: factuurnummer achter label', g.velden.factuurnummer, 'F-8812');
+    gelijk('factuur 2: kenmerk', g.velden.kenmerk, '1234567890123456');
+    gelijk('factuur 2: omschrijving = kenmerk', Factuur.omschrijving(g.velden), '1234567890123456');
+    gelijk('factuur 2: vervaldatum', g.velden.vervaldatum, '2026-11-30');
+    gelijk('factuur 2: rekening van de klant telt niet', g.velden.iban, 'NL44RABO0123456789');
+    gelijk('factuur 2: naam via t.n.v.', g.velden.naam, 'Groen Dak Installaties BV');
+
+    var leeg = Factuur.analyseer([pagina(1, [[100, [[60, 'Hallo']]]])]);
+    gelijk('factuur zonder gegevens', Object.keys(leeg.velden).length, 0);
+    gelijk('bedragen in tekst', Factuur.bedragenIn('BTW 9 % (€ 5.654,56) € 508,91'), [565456, 50891]);
+    gelijk('IBAN met spaties en rommel erachter', Factuur.ibansIn('IBAN: NL23 RABO 0105 5028 55 BIC: RABONL2U'), ['NL23RABO0105502855']);
 
     var qr = qrcode(0, 'M'); qr.addData(r.payload, 'Byte'); qr.make();
     gelijk('QR gemaakt', qr.getModuleCount() >= 21, true);
