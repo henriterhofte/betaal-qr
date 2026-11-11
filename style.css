@@ -274,3 +274,10 @@ footer { margin-top: 28px; color: var(--zacht); font-size: .85rem; }
 /* nieuwe versie */
 .nieuwe-versie { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
   padding: 12px 16px; border-radius: 8px; background: var(--vlak); border: 1px solid var(--accent); }
+
+/* doneren (stap 3) */
+.doneer { display: flex; gap: 12px; align-items: flex-start; border-top: 1px solid var(--rand-licht); padding-top: 18px; font-size: .92rem; }
+.doneer svg { flex: none; color: var(--accent); margin-top: 2px; }
+.doneer h2 { margin: 0 0 4px; font-size: 1rem; }
+.doneer p { margin: 0; color: var(--zacht); }
+.doneer p + p { margin-top: 6px; }
