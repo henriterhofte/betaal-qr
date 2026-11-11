@@ -546,9 +546,33 @@
       factuurStatus('Er is niets gedeeld, of het gedeelde bestand is geen PDF. Kies een factuur met "Factuur openen…".', 'let-op');
     }
   }
-  // Als geïnstalleerde app: de tip over delen en "openen met" korter maken.
-  if (window.matchMedia && matchMedia('(display-mode: standalone)').matches) {
+  // ---- installeren als app ----
+  // Al geïnstalleerd: korte tip, geen uitleg. Anders: de uitleg voor deze browser bovenaan, en als de
+  // browser het toestaat (Chrome, Edge) een echte knop die het installatievenster opent.
+  function alsAppGeinstalleerd() {
     $('deel-tip').textContent = 'Je kunt een factuur ook delen naar Betaal-QR, of op je laptop openen met Betaal-QR.';
+    $('installeren').hidden = true;
+  }
+  if ((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone) {
+    alsAppGeinstalleerd();
+  } else {
+    var ua = navigator.userAgent;
+    var browser = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'ios'
+      : /Android/.test(ua) ? 'android' : /Edg\//.test(ua) ? 'edge' : /Chrome\//.test(ua) ? 'chrome' : null;
+    var eigen = browser && document.querySelector('.install-lijst [data-browser="' + browser + '"]');
+    if (eigen) { eigen.classList.add('jouw-browser'); eigen.parentNode.insertBefore(eigen, eigen.parentNode.firstChild); }
+    var installVraag = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();          // geen automatische balk; wij tonen de knop in de uitleg
+      installVraag = e;
+      $('install-nu').hidden = false;
+    });
+    $('install-knop').addEventListener('click', function () {
+      if (!installVraag) return;
+      installVraag.prompt();
+      installVraag.userChoice.then(function () { installVraag = null; $('install-nu').hidden = true; });
+    });
+    window.addEventListener('appinstalled', alsAppGeinstalleerd);
   }
   // Openen met (File Handling API): het bestand komt via launchQueue binnen, zonder netwerk.
   if ('launchQueue' in window) {

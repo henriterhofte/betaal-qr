@@ -335,3 +335,17 @@ form.geblokkeerd .bedrag-invoer { background: var(--grond); border-style: dashed
 form.geblokkeerd .bedrag-invoer input { background: transparent; border-style: none; }
 
 .deel-tip { flex-basis: 100%; margin: 0; }
+
+/* installeren als app (uitklapblok in stap 1) */
+.installeren { flex-basis: 100%; font-size: .9rem; }
+.installeren summary { cursor: pointer; color: var(--accent); font-weight: 600; min-height: 32px; display: flex; align-items: center; }
+.installeren summary::before { content: "▸"; margin-right: 6px; transition: transform .15s; }
+.installeren[open] summary::before { transform: rotate(90deg); }
+.installeren summary::-webkit-details-marker { display: none; }
+.install-nu { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 8px 0 4px; }
+.install-lijst { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.install-lijst li { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 6px; background: var(--vlak); border: 1px solid var(--rand-licht); }
+.install-lijst li.jouw-browser { border-color: var(--accent); }
+.install-lijst li.jouw-browser > b:first-child::after { content: " (jouw browser)"; font-weight: 400; color: var(--zacht); }
+.install-icoon { display: inline-block; vertical-align: -4px; margin: 0 2px; color: var(--tekst); }
+.installeren > .hint { margin-top: 8px; }

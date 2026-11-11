@@ -60,6 +60,28 @@
           <label class="knop" for="factuur-bestand">Factuur openen…</label>
           <input type="file" id="factuur-bestand" accept="application/pdf,.pdf" class="verborgen">
           <p class="hint deel-tip" id="deel-tip">Tip: installeer Betaal-QR als app. Dan kun je een factuur ook <b>delen</b> naar Betaal-QR (Android) of <b>openen met</b> Betaal-QR (laptop).</p>
+          <details class="installeren" id="installeren">
+            <summary>Hoe installeer ik Betaal-QR als app?</summary>
+            <div class="install-nu" id="install-nu" hidden>
+              <button type="button" id="install-knop" class="knop hoofd">Betaal-QR installeren</button>
+              <span class="hint">Je browser vraagt nog even of je het zeker weet.</span>
+            </div>
+            <ul class="install-lijst">
+              <li data-browser="chrome"><b>Chrome op een laptop</b>
+                <span>Klik rechts in de adresbalk op het icoon
+                  <svg class="install-icoon" width="22" height="18" viewBox="0 0 22 18" role="img" aria-label="icoon: scherm met een pijl omlaag"><rect x="1" y="1" width="20" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"></rect><path d="M7 17h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path><path d="M11 4v6M8.2 7.4 11 10l2.8-2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                  en kies <i>Installeren</i>. Geen icoon? Menu <b>⋮</b> → <i>Casten, opslaan en delen</i> → <i>Pagina installeren als app</i>.</span></li>
+              <li data-browser="edge"><b>Edge op een laptop</b>
+                <span>Menu <b>…</b> → <i>Apps</i> → <i>Deze site installeren als app</i>.</span></li>
+              <li data-browser="android"><b>Android (Chrome)</b>
+                <span>Menu <b>⋮</b> → <i>App installeren</i> of <i>Toevoegen aan startscherm</i>.</span></li>
+              <li data-browser="ios"><b>iPhone of iPad (Safari)</b>
+                <span>Deelknop
+                  <svg class="install-icoon" width="16" height="20" viewBox="0 0 16 20" role="img" aria-label="icoon: vierkant met een pijl omhoog"><path d="M5 7H2.5A1.5 1.5 0 0 0 1 8.5v9A1.5 1.5 0 0 0 2.5 19h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 13.5 7H11" fill="none" stroke="currentColor" stroke-width="1.6"></path><path d="M8 13V1M4.8 4.2 8 1l3.2 3.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                  → <i>Zet op beginscherm</i>. Delen en "openen met" werken op iPhone en iPad niet.</span></li>
+            </ul>
+            <p class="hint">Een geïnstalleerde app werkt in een eigen venster, ook offline. Er wordt niets extra's gedownload behalve deze pagina.</p>
+          </details>
         </div>
         <div id="factuur-status" class="factuur-status" aria-live="polite" hidden></div>
         <div id="factuur-melding" class="factuur-melding" role="alert" hidden>
