@@ -1,4 +1,4 @@
-// Offline-cache. tools/bouw.py vervangt 'betaalqr-dev' door 'betaalqr-<commit>', zodat elke uitrol
+// Offline-cache. tools/bouw.py vervangt de cachenaam hieronder door betaalqr-<commit>, zodat elke uitrol
 // een nieuwe cache krijgt en de oude wordt opgeruimd.
 var VERSIE = 'betaalqr-dev';
 var BESTANDEN = [
