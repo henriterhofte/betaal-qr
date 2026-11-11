@@ -41,14 +41,29 @@ self.addEventListener('fetch', function (e) {
   e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(function (r) { return r || fetch(e.request); }));
 });
 
+// Bewaart het gedeelde bestand, plus een korte beschrijving van wat er binnenkwam (veldnamen, types,
+// namen en groottes; geen inhoud). Die toont de app onder "Wat Betaal-QR ontving", handig als een
+// mailapp iets anders doorgeeft dan een PDF. Alles blijft in de cache van dit apparaat en wordt gewist.
 function bewaarGedeeld(request) {
   return request.formData().then(function (fd) {
-    var bestand = fd.get('factuur');
-    if (!bestand || typeof bestand === 'string') return Response.redirect('./?gedeeld=leeg', 303);
+    var info = { velden: [] };
+    var bestand = null;
+    fd.forEach(function (waarde, sleutel) {
+      if (typeof waarde === 'string') {
+        info.velden.push({ veld: sleutel, soort: 'tekst', lengte: waarde.length });
+      } else {
+        info.velden.push({ veld: sleutel, soort: 'bestand', naam: waarde.name || '', type: waarde.type || '', grootte: waarde.size });
+        if (!bestand && waarde.size > 0) bestand = waarde;
+      }
+    });
     return caches.open(GEDEELD).then(function (c) {
-      return c.put('gedeelde-factuur', new Response(bestand, {
-        headers: { 'Content-Type': bestand.type || 'application/pdf', 'X-Bestandsnaam': encodeURIComponent(bestand.name || 'factuur.pdf') }
-      }));
-    }).then(function () { return Response.redirect('./?gedeeld=1', 303); });
+      var klaar = [c.put('gedeeld-info', new Response(JSON.stringify(info), { headers: { 'Content-Type': 'application/json' } }))];
+      if (bestand) {
+        klaar.push(c.put('gedeelde-factuur', new Response(bestand, {
+          headers: { 'Content-Type': bestand.type || 'application/octet-stream', 'X-Bestandsnaam': encodeURIComponent(bestand.name || 'factuur') }
+        })));
+      }
+      return Promise.all(klaar);
+    }).then(function () { return Response.redirect(bestand ? './?gedeeld=1' : './?gedeeld=leeg', 303); });
   }).catch(function () { return Response.redirect('./?gedeeld=fout', 303); });
 }

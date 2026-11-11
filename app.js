@@ -537,20 +537,50 @@
   var gedeeld = new URLSearchParams(location.search).get('gedeeld');
   if (gedeeld) {
     history.replaceState(null, '', location.pathname);
-    if (gedeeld === '1' && 'caches' in self) {
-      caches.open('betaalqr-gedeeld').then(function (c) {
-        return c.match('gedeelde-factuur').then(function (r) {
-          if (!r) return;
-          var naam = decodeURIComponent(r.headers.get('X-Bestandsnaam') || 'factuur.pdf');
-          return r.blob().then(function (b) {
-            c.delete('gedeelde-factuur');
-            leesFactuur(new File([b], naam, { type: b.type || 'application/pdf' }));
-          });
-        });
-      }).catch(function () { factuurStatus('Het gedeelde bestand kon niet worden geopend. Kies het met "Factuur openen…".', 'fout'); });
+    if (!('caches' in self)) {
+      factuurStatus('Het gedeelde bestand kon niet worden geopend. Kies het met "Factuur openen…".', 'fout');
     } else {
-      factuurStatus('Er is niets gedeeld, of het gedeelde bestand is geen PDF. Kies een factuur met "Factuur openen…".', 'let-op');
+      caches.open('betaalqr-gedeeld').then(function (c) {
+        // Eerst de beschrijving van wat er binnenkwam (voor "Wat Betaal-QR ontving"), dan het bestand.
+        return c.match('gedeeld-info').then(function (ri) { return ri ? ri.json() : null; }).catch(function () { return null; })
+          .then(function (info) {
+            c.delete('gedeeld-info');
+            toonOntvangen(info);
+            if (gedeeld !== '1') {
+              factuurStatus(gedeeld === 'fout'
+                ? 'Er ging iets mis bij het ontvangen van het gedeelde bestand. Kies de factuur met "Factuur openen…".'
+                : 'Er kwam geen bestand mee met het delen, alleen tekst of een link. Bewaar de PDF eerst (bijvoorbeeld in Downloads) en deel hem dan vanuit Bestanden, of kies hem met "Factuur openen…".', 'let-op');
+              return;
+            }
+            return c.match('gedeelde-factuur').then(function (r) {
+              if (!r) return;
+              var naam = decodeURIComponent(r.headers.get('X-Bestandsnaam') || 'factuur');
+              return r.blob().then(function (b) {
+                c.delete('gedeelde-factuur');
+                leesFactuur(new File([b], naam, { type: b.type || 'application/octet-stream' }));
+              });
+            });
+          });
+      }).catch(function () { factuurStatus('Het gedeelde bestand kon niet worden geopend. Kies het met "Factuur openen…".', 'fout'); });
     }
+  }
+  // "Wat Betaal-QR ontving": technische details van het delen, om problemen met een mailapp te kunnen uitzoeken.
+  function toonOntvangen(info) {
+    var blok = $('ontvangen');
+    if (!info || !info.velden) { blok.hidden = true; return; }
+    var lijst = $('ontvangen-lijst');
+    lijst.textContent = '';
+    if (!info.velden.length) {
+      var leeg = document.createElement('li'); leeg.textContent = 'Niets: het delen bevatte geen gegevens.'; lijst.appendChild(leeg);
+    }
+    info.velden.forEach(function (v) {
+      var li = document.createElement('li');
+      li.textContent = v.soort === 'bestand'
+        ? 'Bestand "' + (v.naam || '(geen naam)') + '", type ' + (v.type || '(onbekend)') + ', ' + Math.round(v.grootte / 1024) + ' kB (veld "' + v.veld + '")'
+        : 'Tekst van ' + v.lengte + ' tekens (veld "' + v.veld + '"), geen bestand';
+      lijst.appendChild(li);
+    });
+    blok.hidden = false;
   }
   // ---- installeren als app ----
   // Al geïnstalleerd: korte tip, geen uitleg. Anders: de uitleg voor deze browser bovenaan, en als de

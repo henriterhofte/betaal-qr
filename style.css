@@ -360,3 +360,7 @@ form.geblokkeerd .bedrag-invoer input { background: transparent; border-style: n
 .install-lijst li.jouw-browser > b:first-child::after { content: " (jouw browser)"; font-weight: 400; color: var(--zacht); }
 .install-icoon { display: inline-block; vertical-align: -4px; margin: 0 2px; color: var(--tekst); }
 .installeren > .hint { margin-top: 8px; }
+
+.ontvangen { margin-top: -8px; font-size: .85rem; color: var(--zacht); }
+.ontvangen summary { cursor: pointer; }
+.ontvangen ul { margin: 6px 0 0; padding-left: 20px; }

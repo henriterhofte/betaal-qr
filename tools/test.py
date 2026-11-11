@@ -215,6 +215,8 @@ def delen(browser, basis: str) -> None:
         meld(verwacht in status, f"delen, {uitleg}: {status[:70]}")
         if ingelezen and verwacht in status:
             meld(pg.input_value("#bedrag") == "1.512,50" and "gedeeld" not in pg.url, f"delen, {uitleg}: velden ingevuld en adres opgeschoond")
+        ontvangen = pg.text_content("#ontvangen-lijst") or ""
+        meld("Bestand" in ontvangen and "kB" in ontvangen, f"delen, {uitleg}: 'Wat Betaal-QR ontving' toont {ontvangen[:60]!r}")
         ctx.close()
 
 
