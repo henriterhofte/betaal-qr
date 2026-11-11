@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Henri ter Hofte
+# SPDX-License-Identifier: EUPL-1.2
 """Controleert dat wat op de site draait, gebouwd is uit de openbare broncode.
 
     git clone https://github.com/henriterhofte/betaal-qr && cd betaal-qr

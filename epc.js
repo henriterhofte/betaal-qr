@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Henri ter Hofte
+// SPDX-License-Identifier: EUPL-1.2
 // EPC-QR (EPC069-12, versie 002): de "SEPA Credit Transfer"-QR-code die bank-apps kunnen scannen.
 // Puur rekenwerk, geen DOM: bruikbaar in de pagina en in test.html.
 (function (root) {

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Henri ter Hofte
+# SPDX-License-Identifier: EUPL-1.2
 """Bouwt de site uit één git-commit, reproduceerbaar: dezelfde commit geeft byte voor byte dezelfde bestanden.
 
     python tools/bouw.py                       # commit HEAD -> _site/
@@ -45,6 +47,8 @@ def bouw(commit: str, uit: Path) -> dict:
         sys.exit("sw.js: verwacht precies een keer 'betaalqr-dev'")
     bestanden["sw.js"] = sw.replace(b"'betaalqr-dev'", f"'betaalqr-{commit[:12]}'".encode())
     bestanden["versie.js"] = (
+        "// SPDX-FileCopyrightText: 2026 Henri ter Hofte\n"
+        "// SPDX-License-Identifier: EUPL-1.2\n"
         "// Gemaakt door tools/bouw.py: uit welke commit deze site is gebouwd.\n"
         f"self.BETAALQR_BRON = {json.dumps({'commit': commit, 'datum': datum})};\n"
     ).encode()

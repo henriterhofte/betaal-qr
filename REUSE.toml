@@ -1,0 +1,15 @@
+# Licentie-informatie voor bestanden waar geen commentaar in kan, en voor de ongewijzigde bibliotheek.
+# Zie https://reuse.software/
+version = 1
+
+[[annotations]]
+path = ["manifest.webmanifest", "icon-192.png", "icon-512.png"]
+SPDX-FileCopyrightText = "2026 Henri ter Hofte"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+# Ongewijzigd overgenomen uit de npm-release qrcode-generator 1.4.4; bewust zonder extra kop,
+# zodat het bestand byte voor byte gelijk blijft aan het origineel (zie vendor/README.md).
+path = "vendor/qrcode.js"
+SPDX-FileCopyrightText = "2009 Kazuhiko Arase"
+SPDX-License-Identifier = "MIT"

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Henri ter Hofte
+// SPDX-License-Identifier: EUPL-1.2
 // Offline-cache. tools/bouw.py vervangt de cachenaam hieronder door betaalqr-<commit>, zodat elke uitrol
 // een nieuwe cache krijgt en de oude wordt opgeruimd.
 var VERSIE = 'betaalqr-dev';

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Henri ter Hofte
+// SPDX-License-Identifier: EUPL-1.2
 (function () {
   'use strict';
 

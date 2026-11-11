@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Henri ter Hofte
+# SPDX-License-Identifier: EUPL-1.2
 """Draait test.html in headless Chrome en leest de gemaakte QR-code terug met OpenCV.
 
     python tools/test.py [--chrome PAD]

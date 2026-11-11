@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2026 Henri ter Hofte
+     SPDX-License-Identifier: EUPL-1.2 -->
 # vendor
 
 `qrcode.js`: [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4,

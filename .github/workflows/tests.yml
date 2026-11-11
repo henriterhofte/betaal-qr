@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Henri ter Hofte
+# SPDX-License-Identifier: EUPL-1.2
+
 name: tests
 
 # epc.js-tests in headless Chrome (test.html), de QR-code teruggelezen met OpenCV, en een controle
@@ -30,3 +33,5 @@ jobs:
           python3 tools/bouw.py --uit /tmp/a >/dev/null
           python3 tools/bouw.py --uit /tmp/b >/dev/null
           diff -r /tmp/a /tmp/b && echo "gelijk"
+      - name: Licenties en SPDX-koppen (REUSE)
+        run: pipx run "reuse[charset-normalizer]==6.3.0" lint
