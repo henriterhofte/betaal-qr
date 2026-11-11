@@ -18,6 +18,8 @@ bank-app. De bank-app vult dan naam, IBAN, bedrag en omschrijving in. Bevestigen
 - **Later betalen.** Stap 3 noemt de betaaldatum (uit de factuur, aan te passen) en maakt een
   agendaherinnering (.ics) met de QR-code als bijlage en alle gegevens om te betalen, met meldingen
   twee dagen ervoor en op de dag zelf. Een uitvoerdatum kan niet in een EPC-QR; die kies je in je bank-app.
+- **Delen en openen met.** Als geïnstalleerde app: op Android een PDF delen naar Betaal-QR (Web Share Target,
+  afgevangen door de service worker), op de laptop een PDF openen met Betaal-QR (File Handling API).
 - **Op de telefoon.** Kopieerknoppen per gegeven, en de afbeelding opslaan of delen.
 - **Controleerbaar.** Een reproduceerbare build, `sha256.json`, een attestatie van GitHub en een wekelijkse
   controle. Zie [controleer.html](controleer.html).

@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- SPDX-FileCopyrightText: 2026 Henri ter Hofte
+     SPDX-License-Identifier: EUPL-1.2 -->
+<html lang="nl">
+<head><meta charset="utf-8"><title>Test: delen naar Betaal-QR</title></head>
+<body>
+  <!-- Doet na wat Android doet bij "Delen → Betaal-QR": een PDF als POST (multipart) naar /gedeeld.
+       De service worker moet die afvangen, bewaren en doorsturen naar /?gedeeld=1. Gebruikt door tools/test.py. -->
+  <pre id="uit">bezig</pre>
+  <script type="module">
+    const uit = document.getElementById('uit');
+    try {
+      await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+      for (let i = 0; i < 50 && !navigator.serviceWorker.controller; i++) await new Promise((r) => setTimeout(r, 100));
+      if (!navigator.serviceWorker.controller) throw new Error('service worker regelt deze pagina niet');
+      const pdf = await (await fetch('/tests/facturen/kolommen.pdf')).arrayBuffer();
+      const fd = new FormData();
+      fd.append('factuur', new File([pdf], 'gedeelde-kolommen.pdf', { type: 'application/pdf' }));
+      const r = await fetch('/gedeeld', { method: 'POST', body: fd, redirect: 'manual' });
+      uit.textContent = 'verstuurd ' + r.type + ' ' + r.status;
+      location.href = '/index.html?gedeeld=1';
+    } catch (e) { uit.textContent = 'FOUT ' + e; }
+  </script>
+</body>
+</html>

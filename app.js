@@ -526,7 +526,39 @@
   naarStap(1);
   $('kop1').blur();
 
-  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  // ---- een PDF die met de app is gedeeld (Android) of geopend ("Openen met", laptop) ----
+  // Delen: de service worker heeft het bestand in de lokale cache gezet; wij halen het op en wissen het.
+  var gedeeld = new URLSearchParams(location.search).get('gedeeld');
+  if (gedeeld) {
+    history.replaceState(null, '', location.pathname);
+    if (gedeeld === '1' && 'caches' in self) {
+      caches.open('betaalqr-gedeeld').then(function (c) {
+        return c.match('gedeelde-factuur').then(function (r) {
+          if (!r) return;
+          var naam = decodeURIComponent(r.headers.get('X-Bestandsnaam') || 'factuur.pdf');
+          return r.blob().then(function (b) {
+            c.delete('gedeelde-factuur');
+            leesFactuur(new File([b], naam, { type: b.type || 'application/pdf' }));
+          });
+        });
+      }).catch(function () { factuurStatus('Het gedeelde bestand kon niet worden geopend. Kies het met "Factuur openen…".', 'fout'); });
+    } else {
+      factuurStatus('Er is niets gedeeld, of het gedeelde bestand is geen PDF. Kies een factuur met "Factuur openen…".', 'let-op');
+    }
+  }
+  // Als geïnstalleerde app: de tip over delen en "openen met" korter maken.
+  if (window.matchMedia && matchMedia('(display-mode: standalone)').matches) {
+    $('deel-tip').textContent = 'Je kunt een factuur ook delen naar Betaal-QR, of op je laptop openen met Betaal-QR.';
+  }
+  // Openen met (File Handling API): het bestand komt via launchQueue binnen, zonder netwerk.
+  if ('launchQueue' in window) {
+    window.launchQueue.setConsumer(function (params) {
+      if (!params.files || !params.files.length) return;
+      params.files[0].getFile().then(leesFactuur);
+    });
+  }
+
+  if ('serviceWorker' in navigator && window.isSecureContext) {
     // Updates: de browser kijkt bij elke start of sw.js veranderd is (de build zet de commit erin).
     // Is er een nieuwe versie actief geworden terwijl deze pagina open is, dan bieden we vernieuwen aan;
     // niet automatisch, want je kunt net iets aan het invullen zijn.

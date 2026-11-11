@@ -49,6 +49,18 @@ class StilleHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
+    def do_GET(self):
+        # versie.js maakt alleen de build; zonder dit faalt de installatie van de service worker in de werkmap.
+        if self.path.split("?")[0] == "/versie.js" and not (WORTEL / "versie.js").exists():
+            body = b"self.BETAALQR_BRON = null;"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/javascript")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        super().do_GET()
+
 
 def wacht_tot(pg, selector: str, test, timeout: float = 30) -> str:
     """Pollt de tekst van een element (zonder eval, dat de CSP verbiedt)."""
@@ -177,6 +189,29 @@ def doneren(pg, basis: str) -> None:
     meld("Dank je wel" in pg.inner_text("main"), "doneren: 'Al gedaan' geeft een bedankje")
 
 
+def delen(browser, basis: str) -> None:
+    """Delen (Web Share Target): een PDF als POST naar /gedeeld wordt door de service worker afgevangen,
+    en de app leest hem in. Ook: het manifest kondigt delen en 'openen met' aan."""
+    m = json.loads((WORTEL / "manifest.webmanifest").read_text(encoding="utf-8"))
+    st, fh = m.get("share_target", {}), m.get("file_handlers", [])
+    meld(st.get("method") == "POST" and st.get("enctype") == "multipart/form-data" and st["params"]["files"][0]["name"] == "factuur",
+         "manifest: share_target voor PDF's")
+    meld(bool(fh) and "application/pdf" in fh[0]["accept"], "manifest: file_handlers voor PDF's ('openen met')")
+    ctx = browser.new_context()   # schone context: eigen service worker en cache
+    pg = ctx.new_page()
+    pg.goto(basis + "tests/deel.html")
+    try:
+        pg.wait_for_url("**/index.html*", timeout=20000)
+        pg.wait_for_load_state()
+        status = wacht_tot(pg, "#factuur-status", lambda t: t and "wordt gelezen" not in t)
+    except Exception:
+        status = pg.inner_text("#uit") if pg.locator("#uit").count() else pg.url
+    meld("gedeelde-kolommen.pdf" in status, f"delen: gedeelde PDF ingelezen ({status[:60]})")
+    if "gedeelde-kolommen.pdf" in status:
+        meld(pg.input_value("#bedrag") == "1.512,50" and "gedeeld" not in pg.url, "delen: velden ingevuld en adres opgeschoond")
+    ctx.close()
+
+
 def eigen(pg, basis: str, paden: list[str]) -> None:
     for p in paden:
         pdf = Path(p)
@@ -212,6 +247,7 @@ def main() -> None:
         csp.clear()   # test.html heeft geen CSP; vanaf hier telt het
         facturen(pg, basis)
         doneren(pg, basis)
+        delen(browser, basis)
         if a.pdf:
             eigen(pg, basis, a.pdf)
         meld(not csp, "geen CSP-overtredingen in de app" + ("" if not csp else ":\n     " + "\n     ".join(sorted(set(csp))[:5])))

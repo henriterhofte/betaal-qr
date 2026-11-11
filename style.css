@@ -333,3 +333,5 @@ form.geblokkeerd .knop.hoofd:disabled { opacity: .35; }
 @media (max-width: 480px) { .slogan-kop { font-size: 1.3rem; } }
 form.geblokkeerd .bedrag-invoer { background: var(--grond); border-style: dashed; }
 form.geblokkeerd .bedrag-invoer input { background: transparent; border-style: none; }
+
+.deel-tip { flex-basis: 100%; margin: 0; }
