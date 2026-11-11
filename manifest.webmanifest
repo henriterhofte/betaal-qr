@@ -20,7 +20,7 @@
     "enctype": "multipart/form-data",
     "params": {
       "title": "titel",
-      "files": [{ "name": "factuur", "accept": ["application/pdf", ".pdf"] }]
+      "files": [{ "name": "factuur", "accept": ["application/pdf", "application/x-pdf", "application/acrobat", "application/octet-stream", ".pdf"] }]
     }
   },
   "file_handlers": [

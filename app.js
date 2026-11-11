@@ -129,8 +129,12 @@
 
   async function leesFactuur(bestand) {
     if (!bestand) return;
-    if (!/pdf$/i.test(bestand.type) && !/\.pdf$/i.test(bestand.name)) { factuurStatus('Dit is geen PDF. Kies een factuur als PDF-bestand.', 'fout'); return; }
-    if (bestand.size > 25 * 1024 * 1024) { factuurStatus('Deze PDF is groter dan 25 MB; dat is voor een factuur ongebruikelijk.', 'fout'); return; }
+    if (bestand.size > 25 * 1024 * 1024) { factuurStatus('Dit bestand is groter dan 25 MB; dat is voor een factuur ongebruikelijk.', 'fout'); return; }
+    // Aan de inhoud zien of het een PDF is: mailapps geven bijlagen vaak door als "binair bestand"
+    // (application/octet-stream), soms zonder .pdf in de naam. Een PDF begint met %PDF- (in de eerste 1 kB).
+    var kop = new TextDecoder('latin1').decode(await bestand.slice(0, 1024).arrayBuffer());
+    if (kop.indexOf('%PDF-') < 0) { factuurStatus('Dit is geen PDF. Kies of deel een factuur als PDF-bestand.', 'fout'); return; }
+    if (!/\.pdf$/i.test(bestand.name)) bestand = new File([bestand], (bestand.name || 'factuur') + '.pdf', { type: 'application/pdf' });
     zetGeblokkeerd(null);
     factuurStatus('Factuur wordt gelezen…');
     var res;

@@ -14,9 +14,11 @@
       await navigator.serviceWorker.ready;
       for (let i = 0; i < 50 && !navigator.serviceWorker.controller; i++) await new Promise((r) => setTimeout(r, 100));
       if (!navigator.serviceWorker.controller) throw new Error('service worker regelt deze pagina niet');
-      const pdf = await (await fetch('/tests/facturen/kolommen.pdf')).arrayBuffer();
+      // ?type=…&naam=…&bron=… : zo kun je ook een mailapp nadoen die een "binair bestand" zonder .pdf deelt.
+      const q = new URLSearchParams(location.search);
+      const inhoud = await (await fetch(q.get('bron') || '/tests/facturen/kolommen.pdf')).arrayBuffer();
       const fd = new FormData();
-      fd.append('factuur', new File([pdf], 'gedeelde-kolommen.pdf', { type: 'application/pdf' }));
+      fd.append('factuur', new File([inhoud], q.get('naam') || 'gedeelde-kolommen.pdf', { type: q.get('type') || 'application/pdf' }));
       const r = await fetch('/gedeeld', { method: 'POST', body: fd, redirect: 'manual' });
       uit.textContent = 'verstuurd ' + r.type + ' ' + r.status;
       location.href = '/index.html?gedeeld=1';

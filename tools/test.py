@@ -197,19 +197,25 @@ def delen(browser, basis: str) -> None:
     meld(st.get("method") == "POST" and st.get("enctype") == "multipart/form-data" and st["params"]["files"][0]["name"] == "factuur",
          "manifest: share_target voor PDF's")
     meld(bool(fh) and "application/pdf" in fh[0]["accept"], "manifest: file_handlers voor PDF's ('openen met')")
-    ctx = browser.new_context()   # schone context: eigen service worker en cache
-    pg = ctx.new_page()
-    pg.goto(basis + "tests/deel.html")
-    try:
-        pg.wait_for_url("**/index.html*", timeout=20000)
-        pg.wait_for_load_state()
-        status = wacht_tot(pg, "#factuur-status", lambda t: t and "wordt gelezen" not in t)
-    except Exception:
-        status = pg.inner_text("#uit") if pg.locator("#uit").count() else pg.url
-    meld("gedeelde-kolommen.pdf" in status, f"delen: gedeelde PDF ingelezen ({status[:60]})")
-    if "gedeelde-kolommen.pdf" in status:
-        meld(pg.input_value("#bedrag") == "1.512,50" and "gedeeld" not in pg.url, "delen: velden ingevuld en adres opgeschoond")
-    ctx.close()
+    gevallen = [
+        ("", "gedeelde-kolommen.pdf", True, "PDF uit Files"),
+        ("?type=application/octet-stream&naam=bijlage", "bijlage.pdf", True, "mailapp: binair bestand zonder .pdf"),
+        ("?type=application/octet-stream&naam=foto.jpg&bron=/icon-192.png", "geen PDF", False, "geen PDF wordt geweigerd"),
+    ]
+    for query, verwacht, ingelezen, uitleg in gevallen:
+        ctx = browser.new_context()   # schone context: eigen service worker en cache
+        pg = ctx.new_page()
+        pg.goto(basis + "tests/deel.html" + query)
+        try:
+            pg.wait_for_url("**/index.html*", timeout=20000)
+            pg.wait_for_load_state()
+            status = wacht_tot(pg, "#factuur-status", lambda t: t and "wordt gelezen" not in t)
+        except Exception:
+            status = pg.inner_text("#uit") if pg.locator("#uit").count() else pg.url
+        meld(verwacht in status, f"delen, {uitleg}: {status[:70]}")
+        if ingelezen and verwacht in status:
+            meld(pg.input_value("#bedrag") == "1.512,50" and "gedeeld" not in pg.url, f"delen, {uitleg}: velden ingevuld en adres opgeschoond")
+        ctx.close()
 
 
 def eigen(pg, basis: str, paden: list[str]) -> None:
