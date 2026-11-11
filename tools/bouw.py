@@ -46,12 +46,14 @@ def bouw(commit: str, uit: Path) -> dict:
     if sw.count(b"'betaalqr-dev'") != 1:
         sys.exit("sw.js: verwacht precies een keer 'betaalqr-dev'")
     bestanden["sw.js"] = sw.replace(b"'betaalqr-dev'", f"'betaalqr-{commit[:12]}'".encode())
+    # REUSE-IgnoreStart (dit is de kop van het gemaakte versie.js, niet van dit bestand)
     bestanden["versie.js"] = (
         "// SPDX-FileCopyrightText: 2026 Henri ter Hofte\n"
         "// SPDX-License-Identifier: EUPL-1.2\n"
         "// Gemaakt door tools/bouw.py: uit welke commit deze site is gebouwd.\n"
         f"self.BETAALQR_BRON = {json.dumps({'commit': commit, 'datum': datum})};\n"
     ).encode()
+    # REUSE-IgnoreEnd
 
     hashes = {p: hashlib.sha256(b).hexdigest() for p, b in sorted(bestanden.items())}
     manifest = {"bron": {"repo": "henriterhofte/betaal-qr", "commit": commit, "datum": datum}, "sha256": hashes}
