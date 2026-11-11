@@ -1,0 +1,22 @@
+name: controle
+
+# Wekelijks: klopt wat op https://betaal.terhofte.net/ draait nog met de openbare broncode?
+# Leest alleen: haalt sha256.json van de site, bouwt die commit opnieuw en vergelijkt bestand voor
+# bestand, ook met wat de site echt levert (tools/controleer.py). Een verschil laat de run falen.
+on:
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controleer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Opnieuw bouwen en vergelijken met de live site
+        run: python3 tools/controleer.py --url https://betaal.terhofte.net/

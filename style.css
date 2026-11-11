@@ -1,0 +1,160 @@
+:root {
+  --bg: #f6f7f5;
+  --vlak: #ffffff;
+  --tekst: #1d2420;
+  --zacht: #5d6862;
+  --rand: #d5dbd7;
+  --accent: #1f6f4a;
+  --accent-tekst: #ffffff;
+  --fout: #b3261e;
+  --waarschuwing: #8a5a00;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121614;
+    --vlak: #1b201d;
+    --tekst: #e6ebe8;
+    --zacht: #9aa69f;
+    --rand: #333b37;
+    --accent: #5cc08d;
+    --accent-tekst: #0c1a12;
+    --fout: #ff8a80;
+    --waarschuwing: #f0c060;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--tekst);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main { max-width: 920px; margin: 0 auto; padding: 24px 16px 40px; }
+h1 { margin: 0 0 4px; font-size: 1.6rem; }
+.sub { margin: 0 0 24px; color: var(--zacht); }
+
+.uitlink {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--waarschuwing);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: var(--vlak);
+}
+.uitlink b { color: var(--waarschuwing); }
+.layout { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+@media (max-width: 720px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+form, .resultaat {
+  background: var(--vlak);
+  border: 1px solid var(--rand);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.veld { margin-bottom: 14px; }
+label { display: block; font-weight: 600; margin-bottom: 4px; }
+.opt { font-weight: 400; color: var(--zacht); }
+input, select, textarea {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  padding: 9px 11px;
+}
+textarea { resize: vertical; }
+input:focus, select:focus, textarea:focus, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--fout); }
+#iban, #bic { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: .02em; }
+
+.rij { display: flex; gap: 8px; }
+.rij select { flex: 1; min-width: 0; }
+
+.fout { margin: 4px 0 0; color: var(--fout); font-size: .9rem; min-height: 0; }
+.fout:empty { display: none; }
+.hint { margin: 4px 0 0; color: var(--zacht); font-size: .85rem; }
+
+.knoppen { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+button {
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-tekst);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+button.secundair, button.klein { background: transparent; color: var(--accent); }
+button.klein { padding: 6px 10px; font-size: .9rem; }
+button:disabled { opacity: .4; cursor: default; }
+
+.resultaat { text-align: center; }
+.leeg { color: var(--zacht); padding: 60px 0; }
+canvas { width: 100%; max-width: 300px; height: auto; image-rendering: pixelated; border-radius: 6px; }
+.samenvatting {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  text-align: left;
+  margin: 16px 0 8px;
+}
+.samenvatting dt { color: var(--zacht); }
+.samenvatting dd { margin: 0; overflow-wrap: anywhere; font-weight: 600; display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
+.samenvatting dd span { min-width: 0; }
+button.kopieer { background: transparent; color: var(--accent); padding: 2px 8px; font-size: .8rem; flex: none; }
+.let-op { text-align: left; margin-top: 16px; padding: 12px 14px; border: 1px solid var(--rand); border-radius: 8px; background: var(--bg); font-size: .9rem; }
+.let-op ul { margin: 6px 0 0; padding-left: 18px; }
+.let-op li + li { margin-top: 4px; }
+.waarschuwingen li.ernstig { color: var(--fout); font-weight: 600; }
+#s-iban { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+.resultaat .knoppen { justify-content: center; }
+.resultaat .hint { text-align: left; margin-top: 12px; }
+.waarschuwingen { text-align: left; color: var(--waarschuwing); font-size: .9rem; padding-left: 20px; margin: 8px 0; }
+.waarschuwingen:empty { display: none; }
+details { text-align: left; margin-top: 12px; font-size: .9rem; }
+summary { cursor: pointer; color: var(--zacht); }
+pre { background: var(--bg); border: 1px solid var(--rand); border-radius: 8px; padding: 10px; overflow-x: auto; margin: 8px 0 0; }
+
+.vertrouwen {
+  margin-top: 24px;
+  background: var(--vlak);
+  border: 1px solid var(--rand);
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.vertrouwen h2 { margin: 0 0 8px; font-size: 1.15rem; }
+.vertrouwen ul { margin: 0; padding-left: 20px; }
+.vertrouwen li + li { margin-top: 6px; }
+.vertrouwen details { margin-top: 12px; }
+code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .9em; overflow-wrap: anywhere; }
+code.csp { display: block; white-space: pre-wrap; background: var(--bg); border: 1px solid var(--rand); border-radius: 8px; padding: 10px; margin-top: 8px; }
+.bron { margin: 12px 0 0; font-size: .9rem; }
+.bron a, .vertrouwen a { color: var(--accent); }
+#broncommit { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+
+/* controleer.html */
+main.tekst { max-width: 46rem; }
+.tekst h2 { margin: 32px 0 8px; font-size: 1.3rem; }
+.tekst h2 .nr { color: var(--accent); margin-right: 8px; }
+.tekst p + p, .tekst p + ul, .tekst ul + p { margin-top: 10px; }
+.tekst li + li { margin-top: 6px; }
+.tekst a { color: var(--accent); }
+.tech { background: var(--vlak); border: 1px solid var(--rand); border-left: 4px solid var(--accent); border-radius: 8px; padding: 12px 16px; margin-top: 14px; }
+.tech > b { display: block; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--zacht); margin-bottom: 6px; }
+.eerlijk { border-left: 4px solid var(--waarschuwing); padding-left: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: .85rem; margin-top: 8px; }
+th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--rand); vertical-align: top; }
+td.h { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; overflow-wrap: anywhere; }
+kbd { font-family: ui-monospace, Consolas, monospace; font-size: .85em; border: 1px solid var(--rand); border-radius: 4px; padding: 0 4px; }
+
+footer { margin-top: 28px; color: var(--zacht); font-size: .85rem; }
+footer a { color: var(--accent); }

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; manifest-src 'self'; worker-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Maak een betaal-QR-code (EPC/SEPA) om met je bank-app te scannen. Alles blijft in je browser.">
+  <meta name="theme-color" content="#1f6f4a">
+  <title>Betaal-QR</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Betaal-QR</h1>
+      <p class="sub">Vul de betaling in en scan de code met je bank-app. Alles blijft in deze browser; de pagina verstuurt niets.</p>
+    </header>
+
+    <div id="ingebed" class="uitlink" role="alert" hidden>
+      <b>Deze pagina is in een andere site ingebed.</b> Dat hoort niet. Open Betaal-QR rechtstreeks op <a href="https://betaal.terhofte.net/" target="_top" rel="noopener">betaal.terhofte.net</a>.
+    </div>
+
+    <div class="layout">
+      <form id="form" autocomplete="off" novalidate>
+        <div class="veld">
+          <label for="opgeslagen">Opgeslagen ontvanger</label>
+          <div class="rij">
+            <select id="opgeslagen"><option value="">Kies…</option></select>
+            <button type="button" id="verwijder" class="klein" title="Verwijder deze ontvanger uit de lijst">Verwijder</button>
+          </div>
+        </div>
+
+        <div class="veld">
+          <label for="naam">Naam ontvanger</label>
+          <input id="naam" name="naam" maxlength="70" required>
+          <p class="fout" id="fout-naam"></p>
+        </div>
+
+        <div class="veld">
+          <label for="iban">IBAN</label>
+          <input id="iban" name="iban" inputmode="text" spellcheck="false" autocapitalize="characters" placeholder="NL00 BANK 0123 4567 89" required>
+          <p class="fout" id="fout-iban"></p>
+        </div>
+
+        <div class="veld">
+          <label for="bic">BIC <span class="opt">(optioneel)</span></label>
+          <input id="bic" name="bic" spellcheck="false" autocapitalize="characters" maxlength="11">
+          <p class="fout" id="fout-bic"></p>
+        </div>
+
+        <div class="veld">
+          <label for="bedrag">Bedrag (€)</label>
+          <input id="bedrag" name="bedrag" inputmode="decimal" placeholder="0,00" required>
+          <p class="fout" id="fout-bedrag"></p>
+        </div>
+
+        <div class="veld">
+          <label for="omschrijving">Omschrijving of betalingskenmerk</label>
+          <textarea id="omschrijving" name="omschrijving" rows="2" maxlength="140" placeholder="Bijvoorbeeld: factuur 2632601"></textarea>
+          <p class="hint"><span id="teller">0</span>/140 · een RF-kenmerk wordt als gestructureerd kenmerk meegegeven</p>
+          <p class="fout" id="fout-omschrijving"></p>
+        </div>
+
+        <div class="knoppen">
+          <button type="button" id="bewaar">Ontvanger bewaren</button>
+          <button type="button" id="wis" class="secundair">Formulier leegmaken</button>
+        </div>
+      </form>
+
+      <section class="resultaat" aria-live="polite">
+        <div id="leeg" class="leeg">De QR-code verschijnt hier zodra alles klopt.</div>
+        <div id="klaar" hidden>
+          <canvas id="qr" width="320" height="320" role="img" aria-label="Betaal-QR-code"></canvas>
+          <ul id="waarschuwingen" class="waarschuwingen"></ul>
+          <dl class="samenvatting">
+            <dt>Aan</dt><dd><span id="s-naam"></span><button type="button" class="kopieer" data-veld="naam">Kopieer</button></dd>
+            <dt>IBAN</dt><dd><span id="s-iban"></span><button type="button" class="kopieer" data-veld="iban">Kopieer</button></dd>
+            <dt>Bedrag</dt><dd><span id="s-bedrag"></span><button type="button" class="kopieer" data-veld="bedrag">Kopieer</button></dd>
+            <dt>Omschrijving</dt><dd><span id="s-oms"></span><button type="button" class="kopieer" data-veld="omschrijving">Kopieer</button></dd>
+          </dl>
+          <p class="hint">Op je telefoon? Kopieer de gegevens hierboven één voor één naar je bank-app.</p>
+          <div class="knoppen">
+            <button type="button" id="download" class="secundair">Afbeelding opslaan</button>
+            <button type="button" id="deel" class="secundair" hidden>Delen</button>
+          </div>
+          <div class="let-op">
+            <b>Voordat je betaalt</b>
+            <ul>
+              <li>Vergelijk het IBAN in je bank-app met de <b>factuur</b>, niet met deze pagina.</li>
+              <li>Kijk wat de naam-nummercontrole van je bank zegt. Bij "naam komt niet overeen": stoppen en de ontvanger bellen op een nummer dat je al had.</li>
+              <li>Is het IBAN anders dan de vorige keer, of vraagt iemand je haast te maken? Dan is het waarschijnlijk fraude. Bel de ontvanger op een nummer dat je al had, niet op een nummer uit de factuur of de mail.</li>
+              <li>Een QR-code die je van iemand anders krijgt (per mail, app of op papier) kan vervalst zijn. Deze pagina is alleen bedoeld voor betalingen die je zelf invult.</li>
+            </ul>
+          </div>
+          <details>
+            <summary>Inhoud van de code</summary>
+            <pre id="payload"></pre>
+          </details>
+        </div>
+      </section>
+    </div>
+
+    <section class="vertrouwen" aria-labelledby="vt-kop">
+      <h2 id="vt-kop">Blijven je gegevens echt hier?</h2>
+      <ul>
+        <li><b>De code wordt in deze browser gemaakt.</b> Naam, IBAN, bedrag en omschrijving gaan nergens heen, ook niet naar deze site.</li>
+        <li><b>De browser dwingt dat af.</b> De pagina mag van de browser geen verbindingen maken en geen formulieren versturen (zie hieronder). Ook als er per ongeluk code in zou zitten die dat wil, houdt de browser het tegen.</li>
+        <li><b>Opgeslagen ontvangers</b> staan alleen in de opslag van deze browser op dit apparaat. Ze staan niet in een cookie en niet op een server. Wis ze met "Verwijder" of door de sitegegevens te wissen.</li>
+        <li><b>Werkt offline.</b> <span id="offline">Na het eerste bezoek werkt de pagina ook zonder internet.</span> Probeer het: zet de wifi uit en maak een code.</li>
+        <li><b>Geen cookies, geen statistieken, niets van andere sites.</b> Alle bestanden komen van deze site.</li>
+      </ul>
+      <details><summary>Wat deze pagina mag</summary><code id="csp" class="csp"></code>
+        <p class="hint"><code>connect-src 'none'</code>: geen verbindingen. <code>form-action 'none'</code>: geen formulieren versturen. <code>script-src 'self'</code>: alleen scripts van deze site.</p>
+      </details>
+      <p class="bron"><b>Welke software draait hier?</b> <span id="bron">Betaal-QR, gebouwd uit commit <a id="broncommit" href="https://github.com/henriterhofte/betaal-qr">onbekend</a> van de openbare broncode.</span>
+        <a href="controleer.html">Controleer zelf dat dit klopt</a></p>
+    </section>
+
+    <footer>
+      <p>Dit is geen betaaldienst. De pagina zet alleen de gegevens die je invult om in een QR-code. Betalen doe je zelf in je bank-app, en je bank voert de betaling uit. Gebruik op eigen risico, zonder garantie (MIT-licentie).</p>
+      <p>Standaard: EPC069-12 (SEPA Credit Transfer, versie 002). QR-bibliotheek: qrcode-generator 1.4.4 (MIT). <a href="https://github.com/henriterhofte/betaal-qr">Broncode</a></p>
+    </footer>
+  </main>
+  <script src="versie.js"></script>
+  <script src="vendor/qrcode.js"></script>
+  <script src="epc.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

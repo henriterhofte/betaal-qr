@@ -1,0 +1,32 @@
+name: tests
+
+# epc.js-tests in headless Chrome (test.html), de QR-code teruggelezen met OpenCV, en een controle
+# dat controleer.html dezelfde Content-Security-Policy noemt als index.html echt heeft.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: pip install opencv-python-headless numpy pillow
+      - run: python3 tools/test.py --chrome "$(which google-chrome)"
+      - name: CSP in controleer.html gelijk aan index.html
+        run: |
+          python3 - <<'PY'
+          import re, sys
+          csp = re.search(r'Content-Security-Policy" content="([^"]+)"', open("index.html", encoding="utf-8").read()).group(1)
+          if csp not in open("controleer.html", encoding="utf-8").read():
+              sys.exit(f"controleer.html noemt een andere CSP dan index.html:\n{csp}")
+          print("CSP gelijk:", csp)
+          PY
+      - name: Reproduceerbare build (twee keer bouwen geeft hetzelfde)
+        run: |
+          python3 tools/bouw.py --uit /tmp/a >/dev/null
+          python3 tools/bouw.py --uit /tmp/b >/dev/null
+          diff -r /tmp/a /tmp/b && echo "gelijk"

@@ -1,0 +1,44 @@
+name: pages
+
+# betaal.terhofte.net op GitHub Pages. tools/bouw.py bouwt de site uit de commit (reproduceerbaar)
+# en maakt sha256.json; de herkomst daarvan wordt vastgelegd met een attestatie (Sigstore).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write        # ook voor de attestatie
+  attestations: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Bouwen uit deze commit
+        run: python3 tools/bouw.py --uit _site
+      - name: Herkomst vastleggen (controle met gh attestation verify)
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            _site/sha256.json
+            _site/index.html
+            _site/app.js
+            _site/epc.js
+            _site/sw.js
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v5

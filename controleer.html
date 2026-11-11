@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Zo controleer je dit zelf</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="tekst">
+    <p><a href="./">← terug naar Betaal-QR</a></p>
+    <h1>Zo controleer je dit zelf</h1>
+    <p class="sub">Betaal-QR belooft dat je betaalgegevens dit apparaat niet verlaten, en dat de site gebouwd is uit de openbare broncode. Je hoeft dat niet op mijn woord te geloven. Hieronder staat hoe je het zelf nagaat, van eenvoudig (een paar klikken) tot grondig (zelf bouwen en vergelijken).</p>
+
+    <h2><span class="nr">1</span>Wat wordt beloofd</h2>
+    <ul>
+      <li>De QR-code wordt in je eigen browser gemaakt. Naam, IBAN, bedrag en omschrijving worden nergens heen gestuurd, ook niet naar betaal.terhofte.net.</li>
+      <li>Opgeslagen ontvangers staan alleen in de opslag van je eigen browser (localStorage). Er zijn geen cookies, geen statistieken en geen accounts.</li>
+      <li>De site laadt alleen zijn eigen bestanden: geen scripts, lettertypen of beelden van andere sites.</li>
+      <li>De broncode is openbaar (<a href="https://github.com/henriterhofte/betaal-qr">GitHub</a>, MIT-licentie) en klein: één pagina en een paar honderd regels JavaScript, plus de QR-bibliotheek.</li>
+    </ul>
+
+    <h2><span class="nr">2</span>Kijk zelf naar het netwerkverkeer</h2>
+    <p>Dit kost een paar minuten en vraagt geen technische kennis.</p>
+    <ol>
+      <li>Open Betaal-QR en druk op <kbd>F12</kbd> (Mac: <kbd>Cmd</kbd>+<kbd>Option</kbd>+<kbd>I</kbd>). Kies het tabblad <b>Netwerk</b> (Network) en laad de pagina opnieuw.</li>
+      <li>Je ziet alleen bestanden van betaal.terhofte.net langskomen.</li>
+      <li>Wis de lijst en vul een betaling in. Er komen geen nieuwe verzoeken bij, ook niet als de QR-code verschijnt of als je een ontvanger bewaart.</li>
+      <li>Nog eenvoudiger: zet de wifi uit (of vliegtuigmodus aan) en maak een code. Na het eerste bezoek werkt alles gewoon.</li>
+    </ol>
+
+    <h2><span class="nr">3</span>De browser dwingt het af</h2>
+    <p>De pagina geeft je browser een Content-Security-Policy mee: een regel die bepaalt wat de pagina mag. In de app staat hij onder <b>Wat deze pagina mag</b>. Zo luidt hij:</p>
+    <code class="csp">default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; manifest-src 'self'; worker-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'</code>
+    <p>Wat dat betekent:</p>
+    <ul>
+      <li><code>connect-src 'none'</code>: de pagina mag <b>geen enkele</b> verbinding maken, ook niet met deze site zelf. Er is dus geen kanaal om iets te versturen.</li>
+      <li><code>form-action 'none'</code>: er kan geen formulier ergens heen gestuurd worden.</li>
+      <li><code>script-src 'self'</code> en <code>default-src 'none'</code>: alleen scripts van deze site, en verder niets wat niet uitdrukkelijk is toegestaan.</li>
+      <li><code>worker-src 'self'</code>: alleen de eigen service worker. Die bewaart de bestanden van de site voor offline gebruik en ziet geen formuliergegevens.</li>
+    </ul>
+    <p>De beperking zit in de pagina zelf. Ook als er per ongeluk of met opzet code in zou zitten die iets wil versturen, houdt je browser dat tegen.</p>
+
+    <h2><span class="nr">4</span>De build narekenen: is de site gebouwd uit de broncode?</h2>
+    <p>Onderaan de app staat <b>gebouwd uit commit …</b>: de commit waaruit de site is gebouwd. In <a href="sha256.json">sha256.json</a> staat dezelfde commit, met van elk bestand de SHA-256 (een vingerafdruk van de inhoud).</p>
+    <p>De build doet bijna niets. Alle bestanden zijn precies gelijk aan die in de repository, op drie na:</p>
+    <ul>
+      <li>in <code>sw.js</code> wordt de cachenaam <code>betaalqr-dev</code> vervangen door <code>betaalqr-&lt;commit&gt;</code>;</li>
+      <li><code>versie.js</code> wordt gemaakt, met de commit en de commitdatum;</li>
+      <li><code>sha256.json</code> wordt gemaakt.</li>
+    </ul>
+    <p>De build is reproduceerbaar: dezelfde commit geeft byte voor byte dezelfde bestanden.</p>
+    <div class="tech">
+      <b>Voor wie de opdrachtregel kent</b>
+      <p>Nodig: Git en Python 3 (alleen de standaardbibliotheek).</p>
+<pre>git clone https://github.com/henriterhofte/betaal-qr
+cd betaal-qr
+python tools/controleer.py</pre>
+      <p>Het script haalt <code>sha256.json</code> van de site en bouwt die commit zelf opnieuw. Het vergelijkt elk bestand met het manifest, downloadt daarna elk bestand van de site en controleert dat ook. Bij succes staat er: <code>gelijk: wat op https://betaal.terhofte.net/ draait, is gebouwd uit commit …</code></p>
+    </div>
+    <p>Daarnaast draait er elke week een <a href="https://github.com/henriterhofte/betaal-qr/actions/workflows/controle.yml">automatische controle</a> die precies dit doet. Die faalt als de site afwijkt.</p>
+
+    <h2><span class="nr">5</span>De herkomst: is dit echt door GitHub gebouwd?</h2>
+    <p>Bij elke uitrol legt GitHub Actions vast dat <code>sha256.json</code> is gebouwd uit deze repository en deze commit. Dat gebeurt met een attestatie (SLSA-herkomst, ondertekend via Sigstore).</p>
+    <div class="tech">
+      <b>Voor wie de opdrachtregel kent</b>
+      <p>Nodig: de GitHub CLI (<code>gh</code>).</p>
+<pre>curl -O https://betaal.terhofte.net/sha256.json
+gh attestation verify sha256.json --repo henriterhofte/betaal-qr</pre>
+      <p>Bij succes staat er welke workflow en welke commit het bestand hebben gebouwd.</p>
+    </div>
+
+    <h2><span class="nr">6</span>De QR-bibliotheek: ongewijzigd</h2>
+    <p>De QR-code wordt getekend met <a href="https://github.com/kazuhikoarase/qrcode-generator">qrcode-generator</a> 1.4.4 van Kazuhiko Arase (MIT). Een vaste kopie staat in de repository (<code>vendor/qrcode.js</code>), dus er wordt niets van een CDN geladen. Het bestand is byte voor byte gelijk aan dat in de officiële npm-release:</p>
+    <table>
+      <tr><th>bestand</th><th>SHA-256</th></tr>
+      <tr><td>vendor/qrcode.js</td><td class="h">18ae399f81182bc9de916e9c77b195df20cc58d6f2d55a62b085a299f1bf1780</td></tr>
+    </table>
+    <div class="tech">
+      <b>Zelf nagaan</b>
+<pre>curl -sL https://registry.npmjs.org/qrcode-generator/-/qrcode-generator-1.4.4.tgz | tar xzO package/qrcode.js | sha256sum</pre>
+    </div>
+
+    <h2><span class="nr">7</span>Wat dit niet dekt</h2>
+    <div class="eerlijk">
+      <ul>
+        <li><b>Je browser, je besturingssysteem en je extensies</b> vertrouw je. Een kwaadwillende browserextensie kan meekijken op elke pagina, ook op deze.</li>
+        <li><b>GitHub</b> is de host en de bouwer. De attestatie en de weekcontrole maken misbruik zichtbaar, maar voorkomen niet dat er tussen twee controles iets anders wordt geleverd. Wie dat wil uitsluiten, opent de app uit een eigen build: <code>python tools/bouw.py</code> en dan <code>python -m http.server -d _site</code>.</li>
+        <li><b>De code is niet door anderen beoordeeld.</b> Een gelijke vingerafdruk bewijst dat de site uit de broncode komt, niet dat de broncode goed is. Juist daarom is hij klein gehouden.</li>
+        <li><b>Een kwaadwillende kopie</b> van deze site (de code is openbaar) zou een ander IBAN in de QR-code kunnen zetten dan op het scherm staat. Vergelijk daarom altijd in je <b>bank-app</b> het IBAN met de factuur, en let op de naam-nummercontrole. Dat geldt ook voor deze site.</li>
+        <li><b>Bewust weggelaten:</b> links met vooraf ingevulde gegevens. Die zouden oplichters kunnen gebruiken ("betaal via deze link"). Daarnaast weigert de app te werken als hij in een andere site is ingebed (clickjacking).</li>
+        <li><b>Geen betaaldienst.</b> Betaal-QR maakt alleen een plaatje van de gegevens die je invult. Je bank voert de betaling uit, nadat jij hem in de bank-app hebt bevestigd.</li>
+      </ul>
+    </div>
+
+    <footer>
+      <p>Betaal-QR · MIT · <a href="./">terug naar de app</a> · Deze pagina gebruikt geen cookies en laadt niets van andere sites.</p>
+    </footer>
+  </main>
+</body>
+</html>

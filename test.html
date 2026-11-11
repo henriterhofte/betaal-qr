@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <title>Betaal-QR tests</title>
+</head>
+<body>
+  <!-- Tests voor epc.js. Draai met: chrome --headless --dump-dom file:///.../test.html
+       De uitkomst staat in het pre-element met id "uitkomst"; de laatste regel is "ALLE TESTS GESLAAGD" of "MISLUKT: n". -->
+  <pre id="uitkomst"></pre>
+  <script src="vendor/qrcode.js"></script>
+  <script src="epc.js"></script>
+  <script>
+    var regels = [], mis = 0;
+    function gelijk(naam, echt, verwacht) {
+      var ok = JSON.stringify(echt) === JSON.stringify(verwacht);
+      if (!ok) mis++;
+      regels.push((ok ? 'ok   ' : 'FOUT ') + naam + (ok ? '' : '\n     kreeg    ' + JSON.stringify(echt) + '\n     verwacht ' + JSON.stringify(verwacht)));
+    }
+
+    gelijk('IBAN geldig', EPC.ibanGeldig('NL23 RABO 0105 5028 55'), true);
+    gelijk('IBAN fout controlegetal', EPC.ibanGeldig('NL23RABO0105502856'), false);
+    gelijk('IBAN DE geldig', EPC.ibanGeldig('DE89370400440532013000'), true);
+    gelijk('IBAN te kort', EPC.ibanGeldig('NL23RABO'), false);
+    gelijk('IBAN formatteren', EPC.formatteerIban('nl23rabo0105502855'), 'NL23 RABO 0105 5028 55');
+
+    gelijk('bedrag 9669,30', EPC.bedragInCenten('9669,30'), 966930);
+    gelijk('bedrag 9.669,30', EPC.bedragInCenten('9.669,30'), 966930);
+    gelijk('bedrag 9669.30', EPC.bedragInCenten('9669.30'), 966930);
+    gelijk('bedrag 9,669.30', EPC.bedragInCenten('9,669.30'), 966930);
+    gelijk('bedrag 1.250 (duizendtal)', EPC.bedragInCenten('1.250'), 125000);
+    gelijk('bedrag 12,5', EPC.bedragInCenten('12,5'), 1250);
+    gelijk('bedrag € 12', EPC.bedragInCenten('€ 12'), 1200);
+    gelijk('bedrag ,50', EPC.bedragInCenten(',50'), 50);
+    gelijk('bedrag leeg', EPC.bedragInCenten(''), null);
+    gelijk('bedrag onzin', isNaN(EPC.bedragInCenten('abc')), true);
+    gelijk('bedrag 1,2,3', isNaN(EPC.bedragInCenten('1,2,3')), true);
+    gelijk('bedrag 12.34.56', isNaN(EPC.bedragInCenten('12.34.56')), true);
+    gelijk('bedrag 1.234.567,89', EPC.bedragInCenten('1.234.567,89'), 123456789);
+    gelijk('bedrag 1,250 (duizendtal)', EPC.bedragInCenten('1,250'), 125000);
+    gelijk('bedrag 1.2', EPC.bedragInCenten('1.2'), 120);
+    gelijk('bedrag 1.234,567', isNaN(EPC.bedragInCenten('1.234,567')), true);
+    gelijk('bedrag -5', isNaN(EPC.bedragInCenten('-5')), true);
+    gelijk('bedrag tekst', EPC.centenNaarTekst(966930), '€ 9.669,30');
+
+    gelijk('RF-kenmerk geldig', EPC.rfKenmerkGeldig('RF18 5390 0754 7034'), true);
+    gelijk('RF-kenmerk ongeldig', EPC.rfKenmerkGeldig('RF19 5390 0754 7034'), false);
+    gelijk('SEPA-tekens', EPC.sepaTekst('Café & co ™'), 'Cafe + co');
+
+    var r = EPC.maak({ naam: 'B.V. Bouwbedrijf Hoffman Beltrum-Zutphen', iban: 'NL23 RABO 0105 5028 55', bic: 'RABONL2U', bedrag: '9.669,30', omschrijving: 'Factuur 2632601' });
+    gelijk('Hoffman ok', r.ok, true);
+    gelijk('Hoffman payload', r.payload,
+      'BCD\n002\n1\nSCT\nRABONL2U\nB.V. Bouwbedrijf Hoffman Beltrum-Zutphen\nNL23RABO0105502855\nEUR9669.30\n\n\nFactuur 2632601');
+
+    var rf = EPC.maak({ naam: 'Test', iban: 'NL23RABO0105502855', bedrag: '1', omschrijving: 'RF18 5390 0754 7034' });
+    gelijk('RF in kenmerkregel', rf.payload, 'BCD\n002\n1\nSCT\n\nTest\nNL23RABO0105502855\nEUR1.00\n\nRF18539007547034');
+
+    var leeg = EPC.maak({ naam: '', iban: 'xx', bedrag: '', omschrijving: '' });
+    gelijk('fouten bij leeg', Object.keys(leeg.fouten).sort(), ['bedrag', 'iban', 'naam']);
+    gelijk('BIC fout', Object.keys(EPC.maak({ naam: 'a', iban: 'NL23RABO0105502855', bic: 'RABO', bedrag: '1' }).fouten), ['bic']);
+    gelijk('bedrag 0', Object.keys(EPC.maak({ naam: 'a', iban: 'NL23RABO0105502855', bedrag: '0' }).fouten), ['bedrag']);
+    gelijk('omschrijving te lang', Object.keys(EPC.maak({ naam: 'a', iban: 'NL23RABO0105502855', bedrag: '1', omschrijving: new Array(142).join('x') }).fouten), ['omschrijving']);
+    gelijk('waarschuwing aangepaste naam', EPC.maak({ naam: 'Café', iban: 'NL23RABO0105502855', bedrag: '1', omschrijving: 'x' }).waarschuwingen.length, 1);
+
+    var qr = qrcode(0, 'M'); qr.addData(r.payload, 'Byte'); qr.make();
+    gelijk('QR gemaakt', qr.getModuleCount() >= 21, true);
+
+    // Voor de controle met een onafhankelijke QR-lezer (tools/test.py): het plaatje als data-URL.
+    var pre = document.createElement('pre'); pre.id = 'qr-gif'; pre.textContent = qr.createDataURL(8, 32);
+    document.body.appendChild(pre);
+
+    regels.push(mis ? 'MISLUKT: ' + mis : 'ALLE TESTS GESLAAGD');
+    document.getElementById('uitkomst').textContent = regels.join('\n');
+  </script>
+</body>
+</html>
