@@ -200,6 +200,8 @@ def delen(browser, basis: str) -> None:
     gevallen = [
         ("", "gedeelde-kolommen.pdf", True, "PDF uit Files"),
         ("?type=application/octet-stream&naam=bijlage", "bijlage.pdf", True, "mailapp: binair bestand zonder .pdf"),
+        ("?type=" + "application/pdf; name=WO-factuur.pdf".replace(" ", "%20").replace(";", "%3B").replace("=", "%3D") + "&naam=WO-factuur.pdf",
+         "WO-factuur.pdf", True, "eM Client: type met '; name=...' erachter"),
         ("?type=application/octet-stream&naam=foto.jpg&bron=/icon-192.png", "geen PDF", False, "geen PDF wordt geweigerd"),
     ]
     for query, verwacht, ingelezen, uitleg in gevallen:
