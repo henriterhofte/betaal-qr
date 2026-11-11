@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Betaal-QR",
   "short_name": "Betaal-QR",
-  "description": "Factuur in je mail? Fluitend betaald. Open de PDF en scan de betaal-QR-code met je bank-app.",
+  "description": "Factuur in je mail? Fluitend betaald. PDF uit je mail of foto van een papieren factuur: Betaal-QR vult alles in.",
   "lang": "nl",
   "start_url": "./",
   "scope": "./",
