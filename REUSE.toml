@@ -3,7 +3,7 @@
 version = 1
 
 [[annotations]]
-path = ["manifest.webmanifest", "icon-192.png", "icon-512.png"]
+path = ["manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "beeld/og.png"]
 SPDX-FileCopyrightText = "2026 Henri ter Hofte"
 SPDX-License-Identifier = "EUPL-1.2"
 

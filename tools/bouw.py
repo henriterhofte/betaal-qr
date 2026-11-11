@@ -27,7 +27,8 @@ BESTANDEN = [
     "index.html", "controleer.html", "style.css", "app.js", "epc.js", "sw.js",
     "vendor/qrcode.js", "factuur.js", "herinnering.js", "pdflezer.mjs",
     "vendor/pdfjs/pdf.min.mjs", "vendor/pdfjs/pdf.worker.min.mjs", "vendor/jsqr/jsQR.js",
-    "beeld/henri.jpg", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png",
+    "beeld/henri.jpg", "beeld/og.png", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png",
+    "icon-maskable-512.png",
 ]
 
 

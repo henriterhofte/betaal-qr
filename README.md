@@ -41,6 +41,7 @@ bank-app. De bank-app vult dan naam, IBAN, bedrag en omschrijving in. Bevestigen
     python tools/test.py --pdf f.pdf    # ook een eigen factuur inlezen (alleen lokaal tonen)
     python tools/bouw.py                # site bouwen naar _site/ (uit de commit HEAD, niet de werkmap)
     python tools/controleer.py          # live site vergelijken met een eigen build
+    python tools/maak_beelden.py        # app-iconen en previewafbeelding (beeld/og.png) opnieuw maken
 
 Er is geen build-tooling. De enige afhankelijkheden staan ongewijzigd in `vendor/` (zie [vendor/README.md](vendor/README.md)).
 De testfacturen in `tests/facturen/` zijn verzonnen en worden gemaakt met `tools/maak_testfacturen.py`.
