@@ -200,9 +200,20 @@ input[aria-invalid="true"] { border-color: var(--fout); }
 .kopieerlijst dd { margin: 0; display: flex; gap: 8px; align-items: center; justify-content: space-between; font-weight: 600; }
 .kopieerlijst dd span { min-width: 0; overflow-wrap: anywhere; }
 @media (max-width: 640px) {
-  /* Op een smal scherm (meestal een telefoon) eerst wat je op de telefoon zelf kunt doen, de QR-code daarna. */
-  .betaal-opties { grid-template-columns: minmax(0, 1fr); grid-template-areas: "telefoon" "lijst" "qr"; }
-  .optie-qr { border-top: 1px solid var(--rand-licht); padding-top: 16px; }
+  /* Op een smal scherm: de QR-code bovenaan en compact (zichtbaar zonder scrollen), met de uitleg ernaast;
+     daaronder wat je zonder scannen kunt doen. */
+  .betaal-opties { grid-template-columns: minmax(0, 1fr); grid-template-areas: "qr" "telefoon" "lijst"; gap: 18px; }
+  .optie-qr { display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-areas: "beeld kop" "beeld tip";
+    align-items: start; column-gap: 14px; row-gap: 4px; text-align: left; }
+  .optie-qr canvas { grid-area: beeld; width: 150px; max-width: 150px; }
+  .optie-qr h2 { grid-area: kop; margin: 4px 0 0; }
+  .optie-qr .hint { grid-area: tip; }
+  .optie-telefoon { border-top: 1px solid var(--rand-licht); padding-top: 16px; }
+  .kaart#stap3 { gap: 16px; }
+}
+@media (max-width: 340px) {
+  .optie-qr { grid-template-columns: 120px minmax(0, 1fr); }
+  .optie-qr canvas { width: 120px; max-width: 120px; }
 }
 .inhoud { font-size: .85rem; }
 .inhoud summary { cursor: pointer; color: var(--zacht); }

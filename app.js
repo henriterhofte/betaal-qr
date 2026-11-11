@@ -503,6 +503,8 @@
   function naarStap(n) {
     huidigeStap = n;
     [1, 2, 3].forEach(function (i) { $('stap' + i).hidden = i !== n; });
+    // De slogan is voor wie begint; in stap 2 en 3 kost hij op een telefoon ruimte boven de kaart.
+    document.querySelector('.slogan').hidden = n !== 1;
     pasDonerenToe(n);
     document.querySelectorAll('.stappen li').forEach(function (li) {
       var i = +li.dataset.stap;
