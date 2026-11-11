@@ -29,7 +29,7 @@
 
   // Labels voor het bedrag. Sterk: wat er te betalen is (de eerste vindplaats wint; 0,00 = al betaald).
   // Zwak: een totaal; daarvan wint het onderste op de pagina (het eindtotaal staat meestal onderaan).
-  var LABEL_TE_BETALEN = /totaal\s*factuurbedrag|(nog|resterend)\s*te\s*betalen|te\s*betalen|openstaand(e)?\s*(bedrag|saldo)|te\s*voldoen|amount\s*due|total\s*due|balance\s*due|zu\s*zahlen|zahlbetrag|à\s*payer|a\s*payer/;
+  var LABEL_TE_BETALEN = /totaal\s*factuurbedrag|(nog|resterend)\s*te\s*betalen|te\s*betalen|openstaand(e)?\s*(bedrag|saldo)|\bsaldo\b|te\s*voldoen|amount\s*due|total\s*due|balance(\s*due)?\b|outstanding|zu\s*zahlen|zahlbetrag|restbetrag|à\s*payer|a\s*payer|solde/;
   var LABEL_TOTAAL = /totaal|total|summe|eindbedrag|factuurbedrag|gesamtbetrag|rechnungsbetrag|montant/;
   // Geen eindtotaal: exclusief btw, subtotaal, netto, of alleen het btw-bedrag ("incl. btw" telt wel).
   function geenEindtotaal(label) {
@@ -168,7 +168,7 @@
 
         // Factuurnummer: achter het label, of eronder in dezelfde kolom
         if (!velden.factuurnummer) {
-          var reNr = /factuurnummer|factuurnr\.?|factuur\s*nr\.?|factuur\s*nummer|invoice\s*(number|no\.?|nr\.?)|rechnungs(nummer|nr\.?)|n[°o]\s*de\s*facture/;
+          var reNr = /factuurnummer|factuurnr\.?|factuur\s*nr\.?|factuur\s*nummer|invoice\s*(number|no\.?|nr\.?)|rechnungs(nummer|nr\.?)|n[°o]\s*de\s*facture|^bill(\s*(no\.?|nr\.?|number))?(?=\s+[a-z]*\d)/;
           var lab = zoekLabel(p, regel, reNr);
           if (lab) {
             var na = naLabel(regel, lab, reNr).split(/\s{2,}|\s(?=[A-Za-z]{3,})/)[0];
@@ -240,11 +240,13 @@
         var m = re.exec(laag(d.s));
         if (!m) continue;
         if (re === LABEL_TOTAAL && geenEindtotaal(d.s)) continue;
+        // Op dezelfde regel: het laatste bedrag (op een totaalregel met netto, btw en totaal is dat het totaal).
         var rest = d.s.slice(m.index + m[0].length) + ' ' + regel.delen.slice(i + 1).map(function (x) { return x.s; }).join(' ');
         var b = bedragenIn(rest, true);
-        if (b.length) return { centen: b[0], bron: citaat(p, regel), y: regel.y, pagina: p.nr };
+        if (b.length) return { centen: b[b.length - 1], bron: citaat(p, regel), y: regel.y, pagina: p.nr, regel: true };
+        // Anders onder de kolomkop (tabellen); dat telt minder zwaar.
         var onder = waardeOnder(p, ri, d, function (s) { return bedragenIn(s, true).length > 0; });
-        if (onder) return { centen: bedragenIn(onder.tekst, true)[0], bron: citaat(p, onder.regel), y: onder.regel.y, pagina: p.nr };
+        if (onder) return { centen: bedragenIn(onder.tekst, true)[0], bron: citaat(p, onder.regel), y: onder.regel.y, pagina: p.nr, regel: false };
       }
       return null;
     }
@@ -271,8 +273,12 @@
       }
     }
     if (!gekozen && totalen.length) {
-      var eerstePagina = totalen[0].pagina;
-      totalen.filter(function (g) { return g.pagina === eerstePagina; }).forEach(function (g) { if (!gekozen || g.y >= gekozen.y) gekozen = g; });
+      // Een totaal met het bedrag op dezelfde regel gaat voor een bedrag onder een kolomkop "Totaal"
+      // (zo'n kolom staat ook in tabellen met losse regels of betalingen). Daarbinnen wint het onderste.
+      var opRegel = totalen.filter(function (g) { return g.regel; });
+      var kandidaten = opRegel.length ? opRegel : totalen;
+      var eerstePagina = kandidaten[0].pagina;
+      kandidaten.filter(function (g) { return g.pagina === eerstePagina; }).forEach(function (g) { if (!gekozen || g.y >= gekozen.y) gekozen = g; });
     }
     if (gekozen) { velden.centen = gekozen.centen; bron.centen = gekozen.bron; }
 

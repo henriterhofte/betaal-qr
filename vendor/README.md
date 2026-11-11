@@ -24,3 +24,15 @@ Apache-2.0 (`jsqr/LICENSE`). Ongewijzigd: `dist/jsQR.js`.
 
     SHA-256  bc40c8a15196236b2314db0856f72ca0b49980cd5413b8c852a7349f5fee0859  jsQR.js
     npm integrity  sha512-dxLob7q65Xg2DvstYkRpkYtmKm2sPJ9oFhrhmudT1dZvNFFTlroai3AWSpLey/w5vMcLBXRgOJsbXpdN9HzU/A==
+
+`tesseract/`: [Tesseract.js](https://github.com/naptha/tesseract.js) 5.1.1 (npm `tesseract.js`, `dist/tesseract.esm.min.js`
+en `dist/worker.min.js`) en [tesseract.js-core](https://github.com/naptha/tesseract.js-core) 5.1.1
+(`tesseract-core-simd-lstm.wasm.js`, `tesseract-core-lstm.wasm.js`), Apache-2.0, ongewijzigd. De worker bevat
+kleine MIT/BSD-onderdelen (regenerator-runtime, buffer, ieee754, zlib.js). Taalmodel `lang/nld.traineddata.gz`:
+tessdata_best (integer) uit npm `@tesseract.js-data/nld` 1.0.0, map `4.0.0_best_int`, Apache-2.0.
+
+    SHA-256  2537be686335e4b2637e933cdc85a52dd80267a592689c1bd63235c8591540ae  tesseract.esm.min.js
+    SHA-256  aca1229639fc9907d86f96e825955a2b7c5716d17f3bc3acd71f9c7ab66181fc  worker.min.js
+    SHA-256  ce20eda9533cbed1e6c2b4276fbae1e0adc61b6754b5513084be601787b457cf  core/tesseract-core-simd-lstm.wasm.js
+    SHA-256  8f04aa0cc81e7bde33f80e92fa01a7a665f0b4884d098acf5de9c7104a11dfaa  core/tesseract-core-lstm.wasm.js
+    SHA-256  a2d904b6ddc4feb0d31ecfcd7361a554102e7aa2e278c54f4fc029e0d0815571  lang/nld.traineddata.gz

@@ -97,7 +97,8 @@ def unit(pg, basis: str) -> None:
 def open_factuur(pg, basis: str, pdf: Path) -> str:
     pg.goto(basis + "index.html")
     pg.set_input_files("#factuur-bestand", str(pdf))
-    return wacht_tot(pg, "#factuur-status", lambda t: t and "wordt gelezen" not in t)
+    bezig = ("wordt gelezen", "wordt herkend", "klaargezet", "herkennen…")
+    return wacht_tot(pg, "#factuur-status", lambda t: t and not any(b in t for b in bezig), timeout=120)
 
 
 def velden(pg) -> dict:
@@ -112,7 +113,7 @@ def naar_controle(pg) -> dict:
 
 
 def facturen(pg, basis: str) -> None:
-    for pdf in sorted(FACTUREN.glob("*.pdf")):
+    for pdf in sorted(list(FACTUREN.glob("*.pdf")) + list(FACTUREN.glob("*.jpg"))):
         verwacht = json.loads(pdf.with_suffix(".verwacht.json").read_text(encoding="utf-8"))
         status = open_factuur(pg, basis, pdf)
         if "status" in verwacht:
@@ -202,7 +203,7 @@ def delen(browser, basis: str) -> None:
         ("?type=application/octet-stream&naam=bijlage", "bijlage.pdf", True, "mailapp: binair bestand zonder .pdf"),
         ("?type=" + "application/pdf; name=WO-factuur.pdf".replace(" ", "%20").replace(";", "%3B").replace("=", "%3D") + "&naam=WO-factuur.pdf",
          "WO-factuur.pdf", True, "eM Client: type met '; name=...' erachter"),
-        ("?type=application/octet-stream&naam=foto.jpg&bron=/icon-192.png", "geen PDF", False, "geen PDF wordt geweigerd"),
+        ("?type=application/octet-stream&naam=bestand.json&bron=/manifest.webmanifest", "geen PDF of foto", False, "geen PDF of foto wordt geweigerd"),
     ]
     for query, verwacht, ingelezen, uitleg in gevallen:
         ctx = browser.new_context()   # schone context: eigen service worker en cache

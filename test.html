@@ -145,6 +145,20 @@
     var eind = Factuur.analyseer([pagina(1, [
       [302, [[355, 'Totaalbedrag'], [475, '34,99']]], [320, [[355, 'BTW (20%)'], [475, '8,20']]], [338, [[355, 'Totaal:'], [475, '40,99']]]])]);
     gelijk('onderste totaal wint', eind.velden.centen, 4099);
+    // Hotelrekening (Engels): totaal op de regel, daarna een betalingentabel met kolom "TOTAL", en "BALANCE 0,00".
+    var hotel = Factuur.analyseer([pagina(1, [
+      [35, [[490, 'BILL 13779']]],
+      [293, [[39, 'BILL ITEMS'], [259, 'CONSUMED'], [436, 'GROSS COUNT'], [524, 'TOTAL']]],
+      [319, [[68, 'Stay Package'], [339, '€54,58'], [441, '€64,34'], [530, '€64,34']]],
+      [363, [[46, 'TOTAL'], [517, '€71,84']]],
+      [420, [[226, 'Total'], [323, '€62,08'], [428, '€9,76'], [522, '€71,84']]],
+      [448, [[47, 'PAYMENT'], [445, 'CONSUMED'], [517, 'TOTAL']]],
+      [470, [[46, 'Card payment (Visa ***#7251)'], [459, '11-05-2026'], [523, '€7,50']]],
+      [506, [[47, 'BALANCE'], [523, '€0,00']]]])]);
+    gelijk('hotel: balance 0,00 = betaald', hotel.status && hotel.status.soort, 'betaald');
+    gelijk('hotel: totaal op de regel, niet de betaling eronder', hotel.velden.centen, 7184);
+    gelijk('hotel: bill-nummer', hotel.velden.factuurnummer, '13779');
+    gelijk('BILL ITEMS is geen nummer', Factuur.analyseer([pagina(1, [[10, [[10, 'BILL ITEMS']]], [20, [[10, 'Stay Package (11-05-2026)']]]])]).velden.factuurnummer, undefined);
     gelijk('datum ISO en voluit', [
       Factuur.analyseer([pagina(1, [[100, [[60, 'Datum: 2025-10-14']]]])]).velden.factuurdatum,
       Factuur.analyseer([pagina(1, [[100, [[60, 'Factuurdatum'], [158, '31 augustus 2026']]]])]).velden.factuurdatum

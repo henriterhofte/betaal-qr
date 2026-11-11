@@ -15,6 +15,8 @@ bank-app. De bank-app vult dan naam, IBAN, bedrag en omschrijving in. Bevestigen
 - **Factuur lezen.** Open een factuur als PDF en Betaal-QR vult naam, IBAN, BIC, bedrag en
   factuurnummer of betalingskenmerk in, en toont wanneer je moet betalen. Ook een betaal-QR op de factuur
   wordt gelezen en vergeleken met de tekst. Alles lokaal (pdf.js en jsQR, pas geladen als je een PDF kiest).
+- **Foto's en scans.** Een foto van een papieren factuur (knop "Foto maken") of een gescande PDF wordt
+  gelezen met tekstherkenning (Tesseract.js, Nederlands model), lokaal en pas geladen bij gebruik.
 - **Later betalen.** Stap 3 noemt de betaaldatum (uit de factuur, aan te passen) en maakt een
   agendaherinnering (.ics) met de QR-code als bijlage en alle gegevens om te betalen, met meldingen
   twee dagen ervoor en op de dag zelf. Een uitvoerdatum kan niet in een EPC-QR; die kies je in je bank-app.
@@ -60,9 +62,11 @@ Gebruikt werk van anderen, met dank:
 | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (`vendor/qrcode.js`, ongewijzigd) | Kazuhiko Arase | MIT ([LICENSES/MIT.txt](LICENSES/MIT.txt)) |
 | [pdf.js](https://github.com/mozilla/pdf.js) 4.10.38 (`vendor/pdfjs/`, ongewijzigd) | Mozilla Foundation | Apache-2.0 ([LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt)) |
 | [jsQR](https://github.com/cozmo/jsQR) 1.4.0 (`vendor/jsqr/`, ongewijzigd) | Cosmo Wolfe en anderen | Apache-2.0 |
+| [Tesseract.js](https://github.com/naptha/tesseract.js) 5.1.1 en tesseract.js-core 5.1.1 (`vendor/tesseract/`, ongewijzigd) | Jerome Wu, Balearica en anderen | Apache-2.0 (met kleine MIT/BSD-onderdelen) |
+| Nederlands taalmodel (`vendor/tesseract/lang/`, tessdata_best via @tesseract.js-data/nld 1.0.0) | Google en Tesseract-bijdragers | Apache-2.0 |
 | EPC069-12, *Quick Response Code: Guidelines to Enable Data Capture for the Initiation of a SEPA Credit Transfer* (de standaard, geen code) | European Payments Council | – |
 
-MIT en Apache-2.0 zijn permissief en verenigbaar met de EUPL: de bibliotheken blijven onder hun eigen licentie,
+MIT, BSD-3-Clause en Apache-2.0 zijn permissief en verenigbaar met de EUPL: de bibliotheken blijven onder hun eigen licentie,
 met hun oorspronkelijke copyright- en licentieteksten, en het geheel wordt verspreid onder de EUPL-1.2.
 
 "QR Code" is een geregistreerd handelsmerk van DENSO WAVE INCORPORATED.

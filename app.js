@@ -127,24 +127,55 @@
     return c == null ? '' : EPC.centenNaarTekst(c).replace('€ ', '');
   }
 
+  // Tekstherkenning: de eerste keer wordt het model geladen (± 7 MB van deze site, daarna offline bewaard).
+  async function leesMetOcr(beelden) {
+    var ocr = await import('./ocr.mjs');
+    return ocr.leesBeelden(beelden, {
+      voortgang: function (v) {
+        factuurStatus(v.fase === 'laden'
+          ? 'Tekstherkenning wordt klaargezet… (de eerste keer ± 7 MB, daarna werkt het ook offline)'
+          : 'Tekst herkennen… ' + Math.round(v.deel * 100) + '%');
+      }
+    });
+  }
+
   async function leesFactuur(bestand) {
     if (!bestand) return;
     if (bestand.size > 25 * 1024 * 1024) { factuurStatus('Dit bestand is groter dan 25 MB; dat is voor een factuur ongebruikelijk.', 'fout'); return; }
-    // Aan de inhoud zien of het een PDF is: mailapps geven bijlagen vaak door als "binair bestand"
-    // (application/octet-stream), soms zonder .pdf in de naam. Een PDF begint met %PDF- (in de eerste 1 kB).
-    var kop = new TextDecoder('latin1').decode(await bestand.slice(0, 1024).arrayBuffer());
-    if (kop.indexOf('%PDF-') < 0) { factuurStatus('Dit is geen PDF. Kies of deel een factuur als PDF-bestand.', 'fout'); return; }
-    if (!/\.pdf$/i.test(bestand.name)) bestand = new File([bestand], (bestand.name || 'factuur') + '.pdf', { type: 'application/pdf' });
+    // Aan de inhoud zien wat het is: mailapps geven bijlagen vaak door als "binair bestand"
+    // (application/octet-stream), soms zonder extensie. Een PDF begint met %PDF- (in de eerste 1 kB);
+    // foto's herkennen we aan hun eerste bytes (JPEG, PNG, WebP).
+    var kopBytes = new Uint8Array(await bestand.slice(0, 1024).arrayBuffer());
+    var kop = new TextDecoder('latin1').decode(kopBytes);
+    var soort = kop.indexOf('%PDF-') >= 0 ? 'pdf'
+      : (kopBytes[0] === 0xFF && kopBytes[1] === 0xD8) || kop.slice(1, 4) === 'PNG' || (kop.slice(0, 4) === 'RIFF' && kop.slice(8, 12) === 'WEBP') ? 'foto'
+      : /^....ftyp(heic|heix|mif1|msf1)/.test(kop) ? 'heic' : null;
+    if (soort === 'heic') { factuurStatus('Dit is een HEIC-foto (iPhone). Die kan de browser niet lezen. Kies in de Camera-instellingen "Meest compatibel" (JPEG), of maak een schermafbeelding van de foto.', 'fout'); return; }
+    if (!soort) { factuurStatus('Dit is geen PDF of foto. Kies of deel een factuur als PDF, of een foto ervan.', 'fout'); return; }
+    if (soort === 'pdf' && !/\.pdf$/i.test(bestand.name)) bestand = new File([bestand], (bestand.name || 'factuur') + '.pdf', { type: 'application/pdf' });
     zetGeblokkeerd(null);
-    factuurStatus('Factuur wordt gelezen…');
+    factuurStatus(soort === 'pdf' ? 'Factuur wordt gelezen…' : 'Foto wordt gelezen…');
     var res;
     try {
-      var mod = await import('./pdflezer.mjs');
-      res = await mod.leesPdf(await bestand.arrayBuffer());
+      if (soort === 'pdf') {
+        var mod = await import('./pdflezer.mjs');
+        var buffer = await bestand.arrayBuffer();
+        res = await mod.leesPdf(buffer.slice(0));
+        // Een scan (PDF zonder tekst en zonder betaal-QR): de pagina's als plaatje door de tekstherkenning.
+        var betaalQr = res.qrCodes.some(function (q) { return EPC.lees(q.tekst); });
+        if (!betaalQr && res.paginas.every(function (p) { return p.regels.length === 0; })) {
+          factuurStatus('Deze PDF is een scan. De tekst wordt herkend…');
+          var beelden = await mod.paginasAlsBeeld(buffer);
+          res = await leesMetOcr(beelden);
+        }
+      } else {
+        res = await leesMetOcr([bestand]);
+      }
     } catch (e) {
       var wachtwoord = e && /password/i.test(e.name + ' ' + e.message);
       factuurStatus(wachtwoord ? 'Deze PDF is met een wachtwoord beveiligd. Vul de gegevens zelf in.'
-        : 'Deze PDF kon niet worden gelezen. Vul de gegevens zelf in.', 'fout');
+        : soort === 'pdf' ? 'Deze PDF kon niet worden gelezen. Vul de gegevens zelf in.'
+        : 'Deze foto kon niet worden gelezen. Vul de gegevens zelf in.', 'fout');
       return;
     }
 
@@ -178,13 +209,25 @@
     $('opgeslagen').value = bekend ? bekend.iban : '';
     controleer();
 
-    herkenning = { bestand: bestand.name, waarden: invoerWaarden, bron: bron, meldingen: meldingen, vervaldatum: g.vervaldatum || null };
+    // Tekstherkenning maakt fouten (een 8 die een B wordt): extra voorzichtig, en dat ook zeggen.
+    if (res.ocr) {
+      meldingen.unshift({ t: 'Deze gegevens zijn met tekstherkenning uit een foto of scan gelezen. Vergelijk elk cijfer extra goed met de factuur, vooral het IBAN en het bedrag.' });
+      Object.keys(bron).forEach(function (k) { if (bron[k]) bron[k] = bron[k].replace(/^pagina /, 'foto/scan, pagina '); });
+    }
+    herkenning = { bestand: bestand.name, waarden: invoerWaarden, bron: bron, meldingen: meldingen, vervaldatum: g.vervaldatum || null, ocr: !!res.ocr };
 
     var gevonden = velden.filter(function (v) { return invoerWaarden[v]; });
     var mist = ['naam', 'iban', 'bedrag', 'omschrijving'].filter(function (v) { return !invoerWaarden[v]; });
     var tekstloos = res.paginas.every(function (p) { return p.regels.length === 0; });
     if (tekstloos && !qr) {
-      factuurStatus('Deze PDF bevat geen tekst; waarschijnlijk is het een scan. Die kan Betaal-QR nog niet lezen. Vul de gegevens zelf in.', 'fout');
+      factuurStatus(res.ocr
+        ? 'Betaal-QR kon hier geen tekst in herkennen. Maak een scherpe foto recht van boven, met goed licht en de hele factuur in beeld, of vul de gegevens zelf in.'
+        : 'Deze PDF bevat geen tekst. Vul de gegevens zelf in.', 'fout');
+      herkenning = null;
+      return;
+    }
+    if (res.ocr && !gevonden.length) {
+      factuurStatus('In deze foto of scan herkende Betaal-QR geen betaalgegevens. Probeer een scherpere foto, recht van boven en met goed licht, of vul de gegevens zelf in.', 'let-op');
       herkenning = null;
       return;
     }
@@ -205,9 +248,9 @@
       $('iban').focus();
       return;
     }
-    factuurStatus('Gelezen uit ' + bestand.name + '. Gevonden: ' + (gevonden.map(function (v) { return VELDNAMEN[v].toLowerCase(); }).join(', ') || 'niets') + '.' +
+    factuurStatus((res.ocr ? 'Met tekstherkenning gelezen uit ' : 'Gelezen uit ') + bestand.name + '. Gevonden: ' + (gevonden.map(function (v) { return VELDNAMEN[v].toLowerCase(); }).join(', ') || 'niets') + '.' +
       (mist.length ? ' Niet gevonden: ' + mist.map(function (v) { return VELDNAMEN[v].toLowerCase(); }).join(', ') + '; vul die zelf in.' : '') +
-      ' Controleer alles met de factuur.', mist.length ? 'let-op' : 'ok');
+      (res.ocr ? ' Controleer elk cijfer extra goed met de factuur.' : ' Controleer alles met de factuur.'), mist.length || res.ocr ? 'let-op' : 'ok');
     var leeg = mist.filter(function (v) { return v !== 'omschrijving'; })[0];
     $(leeg || 'naar2').focus();
   }
@@ -242,6 +285,11 @@
     $(leeg || 'naar2').focus();
   });
 
+  $('factuur-foto').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    this.value = '';
+    leesFactuur(f);
+  });
   $('factuur-bestand').addEventListener('change', function () {
     var f = this.files && this.files[0];
     this.value = '';   // dezelfde PDF nog eens kiezen moet ook werken

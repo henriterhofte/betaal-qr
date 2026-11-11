@@ -364,3 +364,7 @@ form.geblokkeerd .bedrag-invoer input { background: transparent; border-style: n
 .ontvangen { margin-top: -8px; font-size: .85rem; color: var(--zacht); }
 .ontvangen summary { cursor: pointer; }
 .ontvangen ul { margin: 6px 0 0; padding-left: 20px; }
+
+.factuur-knoppen { display: flex; flex-wrap: wrap; gap: 8px; }
+.factuur-knoppen label.knop { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+@media (max-width: 480px) { .factuur-knoppen { width: 100%; } .factuur-knoppen label.knop { flex: 1 1 140px; justify-content: center; } }

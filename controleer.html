@@ -23,6 +23,7 @@
       <li>Opgeslagen ontvangers staan alleen in de opslag van je eigen browser (localStorage). Er zijn geen cookies, geen statistieken en geen accounts.</li>
       <li>De site laadt alleen zijn eigen bestanden: geen scripts, lettertypen of beelden van andere sites.</li>
       <li>De broncode is openbaar (<a href="https://github.com/henriterhofte/betaal-qr">GitHub</a>, EUPL-1.2) en klein: één pagina en een paar honderd regels JavaScript, plus drie ongewijzigde bibliotheken (zie 6).</li>
+      <li>Een foto van een factuur wordt ook alleen in je browser gelezen, met tekstherkenning (Tesseract) die van deze site komt.</li>
       <li>Een factuur (PDF) die je opent, wordt alleen in je browser gelezen. Het bestand gaat nergens heen; de pagina mag ook dan geen verbindingen maken.</li>
     </ul>
 
@@ -84,15 +85,23 @@ gh attestation verify sha256.json --repo henriterhofte/betaal-qr</pre>
       <tr><td>vendor/qrcode.js</td><td><a href="https://github.com/kazuhikoarase/qrcode-generator">qrcode-generator</a> 1.4.4 (Kazuhiko Arase, MIT): de QR-code tekenen</td><td class="h">18ae399f81182bc9de916e9c77b195df20cc58d6f2d55a62b085a299f1bf1780</td></tr>
       <tr><td>vendor/pdfjs/pdf.min.mjs</td><td rowspan="2"><a href="https://mozilla.github.io/pdf.js/">pdf.js</a> 4.10.38 (Mozilla, Apache-2.0): een factuur-PDF lezen</td><td class="h">27fc2a057a00f92a4334ad06e17dbd7259912954e9fb7f76400bcca5fd190a9c</td></tr>
       <tr><td>vendor/pdfjs/pdf.worker.min.mjs</td><td class="h">1baa1844c89c80a5b2797c916e75ab29254be46d8e9cb53cb6364d7aad84be36</td></tr>
+      <tr><td>vendor/tesseract/tesseract.esm.min.js</td><td rowspan="4"><a href="https://github.com/naptha/tesseract.js">Tesseract.js</a> 5.1.1 en tesseract.js-core 5.1.1 (Apache-2.0): tekstherkenning in foto's en scans</td><td class="h">2537be686335e4b2637e933cdc85a52dd80267a592689c1bd63235c8591540ae</td></tr>
+      <tr><td>vendor/tesseract/worker.min.js</td><td class="h">aca1229639fc9907d86f96e825955a2b7c5716d17f3bc3acd71f9c7ab66181fc</td></tr>
+      <tr><td>vendor/tesseract/core/tesseract-core-simd-lstm.wasm.js</td><td class="h">ce20eda9533cbed1e6c2b4276fbae1e0adc61b6754b5513084be601787b457cf</td></tr>
+      <tr><td>vendor/tesseract/core/tesseract-core-lstm.wasm.js</td><td class="h">8f04aa0cc81e7bde33f80e92fa01a7a665f0b4884d098acf5de9c7104a11dfaa</td></tr>
+      <tr><td>vendor/tesseract/lang/nld.traineddata.gz</td><td>Nederlands taalmodel (tessdata_best, integer; npm @tesseract.js-data/nld 1.0.0)</td><td class="h">a2d904b6ddc4feb0d31ecfcd7361a554102e7aa2e278c54f4fc029e0d0815571</td></tr>
       <tr><td>vendor/jsqr/jsQR.js</td><td><a href="https://github.com/cozmo/jsQR">jsQR</a> 1.4.0 (Apache-2.0): een betaal-QR op de factuur lezen</td><td class="h">bc40c8a15196236b2314db0856f72ca0b49980cd5413b8c852a7349f5fee0859</td></tr>
     </table>
-    <p>pdf.js en jsQR worden pas geladen als je een factuur opent. pdf.js draait met <code>isEvalSupported: false</code> en zonder webfonts, zodat het binnen de Content-Security-Policy blijft.</p>
+    <p>pdf.js en jsQR worden pas geladen als je een factuur opent; Tesseract (± 7 MB) pas als je een foto of een gescande PDF opent. Daarna bewaart de service worker het, zodat het ook offline werkt. pdf.js draait met <code>isEvalSupported: false</code> en zonder webfonts, zodat het binnen de Content-Security-Policy blijft.</p>
     <div class="tech">
       <b>Zelf nagaan</b>
 <pre>curl -sL https://registry.npmjs.org/qrcode-generator/-/qrcode-generator-1.4.4.tgz | tar xzO package/qrcode.js | sha256sum
 curl -sL https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.10.38.tgz | tar xzO package/build/pdf.min.mjs | sha256sum
 curl -sL https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-4.10.38.tgz | tar xzO package/build/pdf.worker.min.mjs | sha256sum
-curl -sL https://registry.npmjs.org/jsqr/-/jsqr-1.4.0.tgz | tar xzO package/dist/jsQR.js | sha256sum</pre>
+curl -sL https://registry.npmjs.org/jsqr/-/jsqr-1.4.0.tgz | tar xzO package/dist/jsQR.js | sha256sum
+curl -sL https://registry.npmjs.org/tesseract.js/-/tesseract.js-5.1.1.tgz | tar xzO package/dist/worker.min.js | sha256sum
+curl -sL https://registry.npmjs.org/tesseract.js-core/-/tesseract.js-core-5.1.1.tgz | tar xzO package/tesseract-core-simd-lstm.wasm.js | sha256sum
+curl -sL https://registry.npmjs.org/@tesseract.js-data/nld/-/nld-1.0.0.tgz | tar xzO package/4.0.0_best_int/nld.traineddata.gz | sha256sum</pre>
     </div>
 
     <h2><span class="nr">7</span>Wat dit niet dekt</h2>
@@ -101,6 +110,7 @@ curl -sL https://registry.npmjs.org/jsqr/-/jsqr-1.4.0.tgz | tar xzO package/dist
         <li><b>Je browser, je besturingssysteem en je extensies</b> vertrouw je. Een kwaadwillende browserextensie kan meekijken op elke pagina, ook op deze.</li>
         <li><b>GitHub</b> is de host en de bouwer. De attestatie en de weekcontrole maken misbruik zichtbaar, maar voorkomen niet dat er tussen twee controles iets anders wordt geleverd. Wie dat wil uitsluiten, opent de app uit een eigen build: <code>python tools/bouw.py</code> en dan <code>python -m http.server -d _site</code>.</li>
         <li><b>De code is niet door anderen beoordeeld.</b> Een gelijke vingerafdruk bewijst dat de site uit de broncode komt, niet dat de broncode goed is. Juist daarom is hij klein gehouden.</li>
+        <li><b>Workers.</b> Het zware werk (PDF lezen, tekstherkenning) gebeurt in zogeheten workers: aparte achtergrondscripts van deze site. Voor workers geldt de Content-Security-Policy van de pagina niet; daar geldt alleen wat de server meestuurt, en GitHub Pages stuurt niets mee. Het gaat om de ongewijzigde bibliotheken hierboven (met vingerafdruk), die alleen hun eigen bestanden van deze site laden. Je ziet dat ook in het netwerkverkeer (punt 2): de foto of PDF zelf gaat nergens heen.</li>
         <li><b>Delen op Android.</b> Als je een PDF deelt naar de geïnstalleerde app, stuurt Android hem als "verzending" naar het adres <code>/gedeeld</code>. De service worker van Betaal-QR vangt die op je telefoon af; er gaat niets over het netwerk. Alleen als die service worker ontbreekt (bijvoorbeeld als je de sitegegevens hebt gewist maar het app-icoon nog staat), zou de PDF naar de server van GitHub gaan, die hem met een foutmelding weggooit. Open de app daarom één keer gewoon voordat je deelt. "Openen met" op een laptop heeft dit niet: daar komt het bestand rechtstreeks bij de app, zonder netwerk.</li>
         <li><b>Herkenning is geen controle.</b> Uit een valse factuur leest Betaal-QR net zo goed een IBAN als uit een echte. Daarom blijft de stap "Klopt deze betaling?" verplicht, met de herkomst van elk gegeven.</li>
         <li><b>Een kwaadwillende kopie</b> van deze site (de code is openbaar) zou een ander IBAN in de QR-code kunnen zetten dan op het scherm staat. Vergelijk daarom altijd in je <b>bank-app</b> het IBAN met de factuur, en let op de naam-nummercontrole. Dat geldt ook voor deze site.</li>

@@ -116,6 +116,56 @@ def briefhoofd(naam, iban, bic, nr, datum, regels, totaal, termijn="Betalingen b
     return t
 
 
+def als_beeld(teksten, schaal: float = 2.5):
+    """Tekent een factuur (dezelfde teksten en posities als de PDF) als plaatje, zoals een scan."""
+    from PIL import Image, ImageDraw, ImageFont
+    font_pad = next((p for p in ["C:/Windows/Fonts/arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"] if Path(p).exists()))
+    im = Image.new("L", (round(595 * schaal), round(842 * schaal)), 255)
+    d = ImageDraw.Draw(im)
+    for x, y, grootte, tekst in teksten:
+        d.text((x * schaal, y * schaal), tekst, font=ImageFont.truetype(font_pad, round(grootte * schaal)), fill=0, anchor="ls")
+    return im
+
+
+def als_foto(im):
+    """Maakt van een scan iets dat op een telefoonfoto lijkt: scheef, met een rand, wat onscherp, JPEG."""
+    import io
+    from PIL import Image, ImageFilter
+    scheef = im.convert("RGB").rotate(-2.2, expand=True, fillcolor=(120, 110, 95), resample=Image.BICUBIC)
+    rand = Image.new("RGB", (scheef.width + 160, scheef.height + 200), (120, 110, 95))
+    rand.paste(scheef, (70, 110))
+    rand = rand.filter(ImageFilter.GaussianBlur(0.8))
+    buf = io.BytesIO()
+    rand.save(buf, "JPEG", quality=72)
+    return buf.getvalue()
+
+
+def pdf_met_volle_afbeelding(im) -> bytes:
+    """Een PDF met alleen een plaatje van de hele pagina (een scan, zonder tekstlaag)."""
+    ruw = zlib.compress(im.convert("L").tobytes(), 9)
+    b, h = im.size
+    objs = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /XObject << /Im1 5 0 R >> >> >>",
+    ]
+    stroom = b"q 595 0 0 842 0 0 cm /Im1 Do Q"
+    objs.append(b"<< /Length %d >>\nstream\n" % len(stroom) + stroom + b"\nendstream")
+    objs.append(b"<< /Type /XObject /Subtype /Image /Width %d /Height %d /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length %d >>\nstream\n"
+                % (b, h, len(ruw)) + ruw + b"\nendstream")
+    uit = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
+    offsets = []
+    for i, o in enumerate(objs, 1):
+        offsets.append(len(uit))
+        uit += b"%d 0 obj\n" % i + o + b"\nendobj\n"
+    xref = len(uit)
+    uit += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objs) + 1)
+    for off in offsets:
+        uit += b"%010d 00000 n \n" % off
+    uit += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (len(objs) + 1, xref)
+    return bytes(uit)
+
+
 def main() -> None:
     UIT.mkdir(parents=True, exist_ok=True)
     facturen = {}
@@ -149,7 +199,7 @@ def main() -> None:
 
     # 4. Scan: alleen een plaatje, geen tekst.
     pxs, brs = qr_pixels("geen betaal-QR", schaal=2)
-    facturen["scan"] = (pdf([([], (100, 100, 60, pxs, brs))]), {"status": "geen tekst"})
+    facturen["scan"] = (pdf([([], (100, 100, 60, pxs, brs))]), {"status": "herk"})   # tekstherkenning vindt niets
 
     # 5. Webshop, al betaald met iDEAL (zoals veel webwinkels): tabel met kolom "Totaal",
     #    "Totaalprijs incl. BTW", en een zin "t.n.v. … onder vermelding" voor wie op rekening koopt.
@@ -200,10 +250,21 @@ def main() -> None:
                     termijn="Het bedrag wordt rond 28-11-2026 automatisch afgeschreven van je rekening.")
     facturen["incasso"] = (pdf([(t8, None)]), {"geblokkeerd": "automatisch afgeschreven", "bedrag": "121,00"})
 
+    # 9. Tekstherkenning: dezelfde factuur als 'kolommen', als foto (JPEG, scheef) en als gescande PDF.
+    verwacht_ocr = {"naam": "Voorbeeld Schilders B.V.", "iban": IBAN_A, "bedrag": "1.512,50",
+                    "omschrijving": "Factuur 2026-0417", "statusbevat": "tekstherkenning"}
+    scan = als_beeld(t1)
+    bestanden = {
+        "foto-kolommen.jpg": (als_foto(scan), verwacht_ocr),
+        "scan-kolommen.pdf": (pdf_met_volle_afbeelding(scan.resize((round(595 * 2), round(842 * 2)))), verwacht_ocr),
+    }
+
     for naam, (data, verwacht) in facturen.items():
-        (UIT / f"{naam}.pdf").write_bytes(data)
-        (UIT / f"{naam}.verwacht.json").write_text(json.dumps(verwacht, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        print(f"{naam}.pdf  {len(data)} bytes")
+        bestanden[f"{naam}.pdf"] = (data, verwacht)
+    for naam, (data, verwacht) in bestanden.items():
+        (UIT / naam).write_bytes(data)
+        (UIT / (naam.rsplit(".", 1)[0] + ".verwacht.json")).write_text(json.dumps(verwacht, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"{naam}  {len(data)} bytes")
 
 
 if __name__ == "__main__":

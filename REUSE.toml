@@ -28,7 +28,7 @@ SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
 # Verzonnen testfacturen (tools/maak_testfacturen.py) en wat de tests ervan verwachten.
-path = ["tests/facturen/*.pdf", "tests/facturen/*.json"]
+path = ["tests/facturen/*.pdf", "tests/facturen/*.jpg", "tests/facturen/*.json"]
 SPDX-FileCopyrightText = "2026 Henri ter Hofte"
 SPDX-License-Identifier = "EUPL-1.2"
 
@@ -37,3 +37,18 @@ SPDX-License-Identifier = "EUPL-1.2"
 path = "beeld/henri.jpg"
 SPDX-FileCopyrightText = "2015 Henri ter Hofte"
 SPDX-License-Identifier = "LicenseRef-AlleRechtenVoorbehouden"
+
+[[annotations]]
+# Tesseract.js 5.1.1 (npm tesseract.js) en tesseract.js-core 5.1.1, ongewijzigd; bevatten ook kleine
+# MIT/BSD-onderdelen (regenerator-runtime, buffer, ieee754, zlib.js). Zie vendor/README.md.
+path = ["vendor/tesseract/tesseract.esm.min.js", "vendor/tesseract/worker.min.js", "vendor/tesseract/LICENSE",
+        "vendor/tesseract/core/tesseract-core-simd-lstm.wasm.js", "vendor/tesseract/core/tesseract-core-lstm.wasm.js",
+        "vendor/tesseract/core/LICENSE"]
+SPDX-FileCopyrightText = "Jerome Wu, Balearica and Tesseract.js contributors"
+SPDX-License-Identifier = "Apache-2.0 AND MIT AND BSD-3-Clause"
+
+[[annotations]]
+# Nederlands taalmodel (tessdata_best, integer), via npm @tesseract.js-data/nld 1.0.0 (verpakking MIT).
+path = "vendor/tesseract/lang/nld.traineddata.gz"
+SPDX-FileCopyrightText = "Google LLC and Tesseract contributors"
+SPDX-License-Identifier = "Apache-2.0"

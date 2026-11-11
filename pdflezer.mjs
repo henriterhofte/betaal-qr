@@ -34,6 +34,27 @@ export async function leesPdf(buffer, { qr = true } = {}) {
   }
 }
 
+// Een gescande PDF (zonder tekst) als plaatjes, voor de tekstherkenning (ocr.mjs). Schaal 3 is ongeveer 216 dpi.
+export async function paginasAlsBeeld(buffer, max = 2) {
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(buffer), ...OPTIES }).promise;
+  try {
+    const beelden = [];
+    for (let nr = 1; nr <= Math.min(doc.numPages, max); nr++) {
+      const page = await doc.getPage(nr);
+      const vp = page.getViewport({ scale: 3 });
+      const canvas = new OffscreenCanvas(Math.ceil(vp.width), Math.ceil(vp.height));
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      beelden.push(await canvas.convertToBlob({ type: 'image/png' }));
+    }
+    return beelden;
+  } finally {
+    doc.destroy();
+  }
+}
+
 async function tekstVan(page, nr) {
   const vp = page.getViewport({ scale: 1 });
   const tc = await page.getTextContent();

@@ -5,9 +5,12 @@
 var VERSIE = 'betaalqr-dev';
 // Tijdelijke plek voor een gedeelde PDF (Android: "Delen → Betaal-QR"). De app haalt hem op en wist hem.
 var GEDEELD = 'betaalqr-gedeeld';
+// Tekstherkenning (± 7 MB): niet vooraf laden, maar bij het eerste gebruik bewaren. Eigen cache met de
+// versies erin, zodat een update van Betaal-QR het model niet opnieuw laat downloaden.
+var OCR = 'betaalqr-ocr-tesseract-5.1.1-nld-1.0.0';
 var BESTANDEN = [
   './', 'index.html', 'controleer.html', 'style.css', 'app.js', 'epc.js', 'versie.js', 'vendor/qrcode.js',
-  'factuur.js', 'herinnering.js', 'pdflezer.mjs', 'vendor/pdfjs/pdf.min.mjs', 'vendor/pdfjs/pdf.worker.min.mjs', 'vendor/jsqr/jsQR.js',
+  'factuur.js', 'herinnering.js', 'pdflezer.mjs', 'ocr.mjs', 'vendor/pdfjs/pdf.min.mjs', 'vendor/pdfjs/pdf.worker.min.mjs', 'vendor/jsqr/jsQR.js',
   'beeld/henri.jpg', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'
 ];
 
@@ -21,7 +24,7 @@ self.addEventListener('install', function (e) {
 
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (namen) {
-    return Promise.all(namen.filter(function (n) { return n !== VERSIE && n !== GEDEELD; }).map(function (n) { return caches.delete(n); }));
+    return Promise.all(namen.filter(function (n) { return n !== VERSIE && n !== GEDEELD && n !== OCR; }).map(function (n) { return caches.delete(n); }));
   }).then(function () { return self.clients.claim(); }));
 });
 
@@ -38,6 +41,14 @@ self.addEventListener('fetch', function (e) {
 
   // Eigen bestanden: eerst de cache (werkt offline), anders het netwerk.
   if (e.request.method !== 'GET') return;
+  if (url.pathname.indexOf('/vendor/tesseract/') >= 0) {
+    e.respondWith(caches.open(OCR).then(function (c) {
+      return c.match(e.request).then(function (r) {
+        return r || fetch(e.request).then(function (n) { if (n.ok) c.put(e.request, n.clone()); return n; });
+      });
+    }));
+    return;
+  }
   e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(function (r) { return r || fetch(e.request); }));
 });
 

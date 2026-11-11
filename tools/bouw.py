@@ -25,7 +25,10 @@ from pathlib import Path
 
 BESTANDEN = [
     "index.html", "controleer.html", "style.css", "app.js", "epc.js", "sw.js",
-    "vendor/qrcode.js", "factuur.js", "herinnering.js", "pdflezer.mjs",
+    "vendor/qrcode.js", "factuur.js", "herinnering.js", "pdflezer.mjs", "ocr.mjs",
+    "vendor/tesseract/tesseract.esm.min.js", "vendor/tesseract/worker.min.js",
+    "vendor/tesseract/core/tesseract-core-simd-lstm.wasm.js", "vendor/tesseract/core/tesseract-core-lstm.wasm.js",
+    "vendor/tesseract/lang/nld.traineddata.gz",
     "vendor/pdfjs/pdf.min.mjs", "vendor/pdfjs/pdf.worker.min.mjs", "vendor/jsqr/jsQR.js",
     "beeld/henri.jpg", "beeld/og.png", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png",
     "icon-maskable-512.png",

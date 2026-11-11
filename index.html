@@ -68,11 +68,18 @@
 
         <div class="factuur-lezen" id="factuur-zone">
           <div class="factuur-tekst">
-            <b>Factuur als PDF?</b>
-            <span>Dan vult Betaal-QR de gegevens voor je in. De PDF wordt alleen op dit apparaat gelezen.</span>
+            <b>Factuur als PDF, of op papier?</b>
+            <span>Dan vult Betaal-QR de gegevens voor je in. De PDF of foto wordt alleen op dit apparaat gelezen.</span>
           </div>
-          <label class="knop" for="factuur-bestand">Factuur openen…</label>
-          <input type="file" id="factuur-bestand" accept="application/pdf,application/x-pdf,.pdf" class="verborgen">
+          <div class="factuur-knoppen">
+            <label class="knop" for="factuur-bestand">Factuur openen…</label>
+            <label class="knop" for="factuur-foto">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+              Foto maken
+            </label>
+          </div>
+          <input type="file" id="factuur-bestand" accept="application/pdf,application/x-pdf,.pdf,image/jpeg,image/png,image/webp" class="verborgen">
+          <input type="file" id="factuur-foto" accept="image/*" capture="environment" class="verborgen">
           <p class="hint deel-tip" id="deel-tip">Tip: installeer Betaal-QR als app. Dan kun je een factuur ook <b>delen</b> naar Betaal-QR (Android) of <b>openen met</b> Betaal-QR (laptop).</p>
           <details class="installeren" id="installeren">
             <summary>Hoe installeer ik Betaal-QR als app?</summary>
@@ -304,7 +311,7 @@
       <ul>
         <li><b>De code wordt in deze browser gemaakt.</b> Naam, IBAN, bedrag en omschrijving gaan nergens heen, ook niet naar deze site.</li>
         <li><b>De browser dwingt dat af.</b> De pagina mag geen verbindingen maken en geen formulieren versturen (zie hieronder). Ook als er per ongeluk code in zou zitten die dat wil, houdt de browser het tegen.</li>
-        <li><b>Een factuur (PDF) die je opent</b>, wordt in deze browser gelezen en nergens heen gestuurd. De PDF-lezer (pdf.js) wordt pas geladen als je een factuur kiest.</li>
+        <li><b>Een factuur (PDF of foto) die je opent</b>, wordt in deze browser gelezen en nergens heen gestuurd. De PDF-lezer en de tekstherkenning worden pas geladen als je ze nodig hebt, en komen ook van deze site.</li>
         <li><b>Bewaarde ontvangers</b> staan alleen in de opslag van deze browser op dit apparaat: niet in een cookie, niet op een server.</li>
         <li><b>Werkt offline.</b> <span id="offline">Na het eerste bezoek werkt de pagina ook zonder internet.</span> Probeer het: zet de wifi uit en maak een code.</li>
         <li><b>Geen cookies, geen statistieken, niets van andere sites.</b></li>
