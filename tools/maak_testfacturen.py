@@ -151,6 +151,55 @@ def main() -> None:
     pxs, brs = qr_pixels("geen betaal-QR", schaal=2)
     facturen["scan"] = (pdf([([], (100, 100, 60, pxs, brs))]), {"status": "geen tekst"})
 
+    # 5. Webshop, al betaald met iDEAL (zoals veel webwinkels): tabel met kolom "Totaal",
+    #    "Totaalprijs incl. BTW", en een zin "t.n.v. … onder vermelding" voor wie op rekening koopt.
+    t5 = [(43, 67, 14, "Factuur 5550001"), (43, 109, 10, "J. Klant"), (43, 125, 10, "Klantweg 9"),
+          (43, 205, 10, "Factuurnummer"), (181, 205, 10, ":"), (188, 205, 10, "5550001"),
+          (43, 244, 10, "Datum"), (181, 244, 10, ":"), (188, 244, 10, "11-07-2026"),
+          (43, 263, 10, "Betaalmethode"), (181, 263, 10, ":"), (188, 263, 10, "iDEAL"),
+          (54, 312, 9, "#"), (158, 312, 9, "Productnaam"), (453, 312, 9, "Prijs"), (508, 312, 9, "Totaal"),
+          (54, 329, 9, "1"), (158, 329, 9, "Tafelventilator"), (440, 329, 9, "€ 18,13"), (503, 329, 9, "€ 18,13"),
+          (412, 401, 9, "Subtotaal"), (482, 401, 9, "€"), (513, 401, 9, "22,22"),
+          (408, 419, 9, "21% BTW"), (482, 419, 9, "€"), (519, 419, 9, "4,67"),
+          (356, 437, 9, "Totaalprijs incl. BTW"), (482, 437, 9, "€"), (513, 437, 9, "26,89"),
+          (372, 454, 9, "Betaald met iDEAL"), (482, 454, 9, "€"), (513, 454, 9, "26,89"),
+          (43, 484, 9, "Heb je de factuur nog niet betaald en koop je zakelijk op rekening? Dan kun je het bedrag binnen 14"),
+          (43, 498, 9, "dagen na factuurdatum overmaken op IBAN NL91ABNA0417164300 t.n.v. Voorbeeld Webshop BV onder"),
+          (43, 511, 9, "vermelding van het factuurnummer 5550001."),
+          (43, 759, 8, "Voorbeeld Webshop BV"), (241, 759, 8, "IBAN: NL91ABNA0417164300"),
+          (43, 769, 8, "Webweg 9"), (265, 769, 8, "BIC: ABNANL2A"), (252, 778, 8, "KVK nummer: 12345678")]
+    facturen["webshop-betaald"] = (pdf([(t5, None)]), {
+        "geblokkeerd": "al betaald", "naam": "Voorbeeld Webshop BV", "iban": IBAN_A, "bedrag": "26,89",
+        "omschrijving": "Factuur 5550001"})
+
+    # 6. Tabel met kopjes en "Totaal te betalen € 0,00" + "Voldaan": betaald; het totaal staat onder de kop.
+    t6 = [(198, 35, 9, "Accu Voorbeeld B.V."), (442, 35, 9, "IBAN:"), (466, 35, 9, "NL44 RABO 01234 56 789"),
+          (442, 45, 9, "BIC:"), (518, 45, 9, "RABONL2U"), (442, 55, 9, "KVK:"), (519, 55, 9, "12.34.56.78"),
+          (74, 90, 14, "Factuur"), (74, 125, 10, "Factuuradres:"), (74, 137, 10, "J. Klant"),
+          (44, 255, 8, "Klantnummer"), (110, 255, 8, "Factuurnummer"), (185, 255, 8, "Factuurdatum"), (438, 255, 8, "Betaalwijze"), (496, 255, 8, "Betalingstermijn"),
+          (37, 265, 8, "399580"), (108, 265, 8, "2718011"), (179, 265, 8, "16-08-2026"), (428, 265, 8, "iDeal | Wero"), (496, 265, 8, "Voldaan"),
+          (396, 345, 9, "Subtotaal"), (465, 345, 9, "btw"), (520, 345, 9, "Totaal"),
+          (412, 354, 9, "€ 39,09"), (476, 354, 9, "€ 8,21"), (531, 354, 9, "€ 47,30"),
+          (428, 375, 9, "Totaal te betalen"), (533, 375, 9, "€ 0,00")]
+    facturen["nul-te-betalen"] = (pdf([(t6, None)]), {
+        "geblokkeerd": "al betaald", "naam": "Accu Voorbeeld B.V.", "iban": IBAN_B, "bedrag": "47,30",
+        "omschrijving": "Factuur 2718011"})
+
+    # 7. Buitenlandse webshop zonder IBAN: subtotaal en eindtotaal; de naam staat in een regel met "|".
+    t7 = [(40, 54, 12, "Factuur"), (103, 54, 12, "SE-1001"), (40, 77, 10, "Factuurnummer"), (113, 77, 10, "SE-1001"),
+          (355, 302, 10, "Totaalbedrag"), (475, 302, 10, "34,99"), (355, 320, 10, "BTW (20%)"), (475, 320, 10, "8,20"),
+          (355, 338, 10, "Totaal:"), (475, 338, 10, "40,99"), (40, 378, 10, "Datum:"), (75, 378, 10, "2026-11-08"),
+          (40, 536, 8, "Voorbeeld AB | Storgatan 1 | Malmo | SE-21121 | Sweden"), (40, 550, 8, "BTW/VAT/TVA NR: SE556000000001")]
+    facturen["geen-iban"] = (pdf([(t7, None)]), {
+        "naam": "Voorbeeld AB", "bedrag": "40,99", "omschrijving": "Factuur SE-1001", "iban": "",
+        "statusbevat": "geen rekeningnummer"})
+
+    # 8. Automatische incasso.
+    t8 = briefhoofd("Energie Voorbeeld B.V.", IBAN_A, "ABNANL2A", "E-77", "01-11-2026",
+                    [("Termijnbedrag november", "100,00")], ("100,00", "21,00", "121,00"),
+                    termijn="Het bedrag wordt rond 28-11-2026 automatisch afgeschreven van je rekening.")
+    facturen["incasso"] = (pdf([(t8, None)]), {"geblokkeerd": "automatisch afgeschreven", "bedrag": "121,00"})
+
     for naam, (data, verwacht) in facturen.items():
         (UIT / f"{naam}.pdf").write_bytes(data)
         (UIT / f"{naam}.verwacht.json").write_text(json.dumps(verwacht, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

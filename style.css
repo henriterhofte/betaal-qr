@@ -314,3 +314,22 @@ html { scroll-padding-top: 16px; }
 .doneer-dank { margin: 0; padding: 12px 16px; border-radius: 8px; background: var(--vlak); border: 1px solid var(--accent); }
 #doneren + .doneer-dank, .doneer.vast + .doneer-dank { margin-top: 24px; }
 @media (max-width: 480px) { .doneer-knop { flex-direction: column; align-items: stretch; } .doneer-knop .hint { text-align: center; } }
+
+/* factuur lijkt al betaald: gegevens grijs, niet verder zonder "Toch betalen" */
+.factuur-melding { display: flex; gap: 12px; align-items: flex-start; margin-top: -8px; padding: 14px 16px; border-radius: 8px;
+  background: var(--grond); border: 1px solid var(--accent); font-size: .92rem; }
+.factuur-melding svg { flex: none; color: var(--accent); margin-top: 1px; }
+.factuur-melding b { display: block; font-size: 1rem; }
+.factuur-melding p { margin: 4px 0 0; }
+.factuur-melding .acties { margin-top: 10px; }
+form.geblokkeerd input, form.geblokkeerd select { background: var(--grond); color: var(--zacht); border-style: dashed; }
+form.geblokkeerd label { color: var(--zacht); }
+form.geblokkeerd .knop.hoofd:disabled { opacity: .35; }
+
+/* slogan */
+.slogan { margin-top: 24px; }
+.slogan-kop { margin: 0; font-size: 1.5rem; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; }
+.slogan-sub { margin: 6px 0 0; color: var(--zacht); font-size: .98rem; }
+@media (max-width: 480px) { .slogan-kop { font-size: 1.3rem; } }
+form.geblokkeerd .bedrag-invoer { background: var(--grond); border-style: dashed; }
+form.geblokkeerd .bedrag-invoer input { background: transparent; border-style: none; }

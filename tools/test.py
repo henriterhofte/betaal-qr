@@ -110,7 +110,19 @@ def facturen(pg, basis: str) -> None:
         for k in ["naam", "iban", "bic", "bedrag", "omschrijving"]:
             if k in verwacht:
                 meld(v[k] == verwacht[k], f"{pdf.name}: {k} = {v[k]!r}" + ("" if v[k] == verwacht[k] else f" (verwacht {verwacht[k]!r})"))
+        if "statusbevat" in verwacht:
+            meld(verwacht["statusbevat"] in status, f"{pdf.name}: melding bevat '{verwacht['statusbevat']}'")
+        if verwacht.get("iban") == "":
+            continue   # zonder IBAN kan stap 2 niet
+        if "geblokkeerd" in verwacht:
+            titel = pg.inner_text("#fm-titel") if pg.is_visible("#factuur-melding") else ""
+            meld(verwacht["geblokkeerd"] in titel, f"{pdf.name}: melding '{titel}'")
+            meld(pg.is_disabled("#naar2") and not pg.is_editable("#bedrag"), f"{pdf.name}: gegevens grijs en 'Volgende' uit")
+            pg.click("#fm-toch")
+            meld(pg.is_enabled("#naar2") and pg.is_editable("#bedrag"), f"{pdf.name}: 'Toch betalen' geeft vrij")
         c = naar_controle(pg)
+        if "geblokkeerd" in verwacht:
+            meld("toch te betalen" in c["waarschuwingen"], f"{pdf.name}: stap 2 waarschuwt dat je toch betaalt")
         if "vervaldatum" in verwacht:
             j, m, d = verwacht["vervaldatum"].split("-")
             meld(f"{d}-{m}-{j}" in c["verval"], f"{pdf.name}: betalen vóór {c['verval']!r}")

@@ -7,6 +7,8 @@
 Maak een betaal-QR-code (EPC069-12, "SEPA Credit Transfer", ook wel GiroCode) en scan die met je
 bank-app. De bank-app vult dan naam, IBAN, bedrag en omschrijving in. Bevestigen doe je zelf.
 
+**Factuur in je mail? Fluitend betaald.** Open de PDF op je laptop en scan de QR-code met je bank-app.
+
 - **Local-first.** Alles gebeurt in je browser. De pagina mag van de browser geen verbindingen maken
   (`connect-src 'none'`). Opgeslagen ontvangers staan alleen in de localStorage van die browser.
 - **Offline.** Werkt na het eerste bezoek ook zonder internet (service worker), en is als app te installeren.

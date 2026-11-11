@@ -1,7 +1,7 @@
 {
   "name": "Betaal-QR",
   "short_name": "Betaal-QR",
-  "description": "Maak een betaal-QR-code (EPC/SEPA) om met je bank-app te scannen.",
+  "description": "Factuur in je mail? Fluitend betaald. Open de PDF en scan de betaal-QR-code met je bank-app.",
   "lang": "nl",
   "start_url": "./",
   "scope": "./",

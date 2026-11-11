@@ -87,6 +87,7 @@
 
   $('form').addEventListener('submit', function (e) {
     e.preventDefault();
+    if ($('form').classList.contains('geblokkeerd')) return;
     var r = controleer(true);
     if (!r.ok) {
       var eerste = velden.filter(function (v) { return r.fouten[v]; })[0];
@@ -103,6 +104,7 @@
     aangeraakt = {};
     herkenning = null;
     factuurStatus('');
+    zetGeblokkeerd(null);
     $('opgeslagen').value = '';
     $('verwijder').disabled = true;
     controleer();
@@ -129,6 +131,7 @@
     if (!bestand) return;
     if (!/pdf$/i.test(bestand.type) && !/\.pdf$/i.test(bestand.name)) { factuurStatus('Dit is geen PDF. Kies een factuur als PDF-bestand.', 'fout'); return; }
     if (bestand.size > 25 * 1024 * 1024) { factuurStatus('Deze PDF is groter dan 25 MB; dat is voor een factuur ongebruikelijk.', 'fout'); return; }
+    zetGeblokkeerd(null);
     factuurStatus('Factuur wordt gelezen…');
     var res;
     try {
@@ -181,9 +184,21 @@
       herkenning = null;
       return;
     }
+    // Zegt de factuur dat er niets (meer) betaald hoeft te worden? Dan tonen we wat herkend is, maar
+    // grijs en zonder door te kunnen, met "Toch betalen" voor als Betaal-QR het verkeerd ziet.
+    if (a.status) {
+      factuurStatus('Gelezen uit ' + bestand.name + '.', 'ok');
+      zetGeblokkeerd(a.status);
+      return;
+    }
     if (!gevonden.length) {
       factuurStatus('In ' + bestand.name + ' staan geen betaalgegevens die Betaal-QR herkent. Is het wel een factuur? Vul de gegevens zelf in.', 'let-op');
       herkenning = null;
+      return;
+    }
+    if (!invoerWaarden.iban) {
+      factuurStatus('Gelezen uit ' + bestand.name + ', maar er staat geen rekeningnummer op de factuur. Vaak betekent dat: al betaald (bijvoorbeeld in een webshop) of automatische incasso. Kijk op de factuur. Moet je wel betalen, vul het rekeningnummer dan zelf in.', 'let-op');
+      $('iban').focus();
       return;
     }
     factuurStatus('Gelezen uit ' + bestand.name + '. Gevonden: ' + (gevonden.map(function (v) { return VELDNAMEN[v].toLowerCase(); }).join(', ') || 'niets') + '.' +
@@ -192,6 +207,36 @@
     var leeg = mist.filter(function (v) { return v !== 'omschrijving'; })[0];
     $(leeg || 'naar2').focus();
   }
+
+  var STATUS_TEKST = {
+    betaald: ['Deze factuur lijkt al betaald', 'Dan hoef je niets te doen.'],
+    incasso: ['Dit bedrag wordt waarschijnlijk automatisch afgeschreven', 'Dan hoef je niets te doen. Betaal je het zelf ook, dan betaal je mogelijk dubbel.'],
+    credit: ['Dit lijkt een creditnota', 'Bij een creditnota krijg je geld terug; je hoeft niets te betalen.'],
+    bewijs: ['Dit lijkt een kaartje of betaalbewijs', 'Dat is meestal al betaald; je hoeft dan niets te doen.']
+  };
+  // status: {soort, bron} uit Factuur.analyseer, of null om weer vrij te geven.
+  function zetGeblokkeerd(status) {
+    var aan = !!status;
+    $('form').classList.toggle('geblokkeerd', aan);
+    velden.forEach(function (v) { $(v).readOnly = aan; });
+    $('opgeslagen').disabled = aan;
+    $('naar2').disabled = aan;
+    $('factuur-melding').hidden = !aan;
+    if (!aan) return;
+    var tekst = STATUS_TEKST[status.soort];
+    $('fm-titel').textContent = tekst[0];
+    $('fm-bron').textContent = 'Op de factuur staat: ' + status.bron.replace(/^pagina (\d+): (.*)$/, '$2 (pagina $1)') + '.';
+    $('fm-uitleg').textContent = tekst[1] + (velden.some(function (v) { return $(v).value; }) ? ' Hieronder zie je wat Betaal-QR herkende.' : '');
+    if (herkenning) herkenning.status = status;
+    $('fm-toch').focus();
+  }
+  $('fm-toch').addEventListener('click', function () {
+    var st = herkenning && herkenning.status;
+    zetGeblokkeerd(null);
+    if (st) herkenning.meldingen.unshift({ t: 'Volgens de factuur hoeft er niets betaald te worden (' + st.bron + '). Je hebt gekozen om toch te betalen: controleer dat je niet dubbel betaalt.', ernstig: true });
+    var leeg = ['naam', 'iban', 'bedrag'].filter(function (v) { return !$(v).value; })[0];
+    $(leeg || 'naar2').focus();
+  });
 
   $('factuur-bestand').addEventListener('change', function () {
     var f = this.files && this.files[0];
@@ -402,6 +447,7 @@
     laatste = null;
     herkenning = null;
     factuurStatus('');
+    zetGeblokkeerd(null);
     $('opgeslagen').value = '';
     controleer();
     naarStap(1);

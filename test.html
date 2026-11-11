@@ -123,6 +123,33 @@
     gelijk('factuur 2: rekening van de klant telt niet', g.velden.iban, 'NL44RABO0123456789');
     gelijk('factuur 2: naam via t.n.v.', g.velden.naam, 'Groen Dak Installaties BV');
 
+    // ---- status: al betaald, incasso, creditnota, kaartje; en geen valse alarmen ----
+    function status(tekst) { var s = Factuur.analyseer([pagina(1, [[100, [[60, tekst]]]])]).status; return s ? s.soort : null; }
+    gelijk('status: BETAALD', status('BETAALD'), 'betaald');
+    gelijk('status: reeds betaald', status('Deze factuur is reeds betaald via de webshop.'), 'betaald');
+    gelijk('status: betaalwijze iDEAL', status('Betaalwijze: iDeal'), 'betaald');
+    gelijk('status: betaald per iDEAL', status('Betalingstermijn: Betaald per Ideal'), 'betaald');
+    gelijk('status: incasso', status('Het bedrag wordt rond 28-11 automatisch afgeschreven van je rekening.'), 'incasso');
+    gelijk('status: creditnota', status('Creditnota 12345'), 'credit');
+    gelijk('status: e-ticket', status('Ticket nr. E534256355.001'), 'bewijs');
+    gelijk('geen alarm: te zijn betaald', status('Facturen dienen binnen 14 dagen te zijn betaald.'), null);
+    gelijk('geen alarm: nog niet betaald', status('Heb je de factuur nog niet betaald? Maak het bedrag dan over.'), null);
+    gelijk('geen alarm: incasso aanbieden', status('Indien u kiest voor automatische incasso, vul dan de machtiging in.'), null);
+    gelijk('geen alarm: betaalwijze overschrijving', status('Betaalwijze: overschrijving'), null);
+    var nul = Factuur.analyseer([pagina(1, [
+      [345, [[396, 'Subtotaal'], [465, 'btw'], [520, 'Totaal']]],
+      [354, [[412, '€ 39,09'], [476, '€ 8,21'], [531, '€ 47,30']]],
+      [375, [[428, 'Totaal te betalen'], [533, '€ 0,00']]]])]);
+    gelijk('te betalen 0,00 = betaald', nul.status && nul.status.soort, 'betaald');
+    gelijk('totaal onder de kolomkop', nul.velden.centen, 4730);
+    var eind = Factuur.analyseer([pagina(1, [
+      [302, [[355, 'Totaalbedrag'], [475, '34,99']]], [320, [[355, 'BTW (20%)'], [475, '8,20']]], [338, [[355, 'Totaal:'], [475, '40,99']]]])]);
+    gelijk('onderste totaal wint', eind.velden.centen, 4099);
+    gelijk('datum ISO en voluit', [
+      Factuur.analyseer([pagina(1, [[100, [[60, 'Datum: 2025-10-14']]]])]).velden.factuurdatum,
+      Factuur.analyseer([pagina(1, [[100, [[60, 'Factuurdatum'], [158, '31 augustus 2026']]]])]).velden.factuurdatum
+    ], ['2025-10-14', '2026-08-31']);
+
     var leeg = Factuur.analyseer([pagina(1, [[100, [[60, 'Hallo']]]])]);
     gelijk('factuur zonder gegevens', Object.keys(leeg.velden).length, 0);
     gelijk('bedragen in tekst', Factuur.bedragenIn('BTW 9 % (€ 5.654,56) € 508,91'), [565456, 50891]);

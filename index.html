@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; manifest-src 'self'; worker-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
-  <meta name="description" content="Maak een betaal-QR-code (EPC/SEPA) om met je bank-app te scannen. Alles blijft in je browser.">
+  <meta name="description" content="Factuur in je mail? Fluitend betaald. Open de PDF en scan de betaal-QR-code met je bank-app. Alles blijft in je browser.">
   <meta name="theme-color" content="#1c2b30">
   <title>Betaal-QR</title>
   <link rel="manifest" href="manifest.webmanifest">
@@ -37,6 +37,11 @@
     </div>
 
     <div id="app">
+      <div class="slogan">
+        <p class="slogan-kop">Factuur in je mail? Fluitend betaald.</p>
+        <p class="slogan-sub">Open de PDF op je laptop en scan de QR-code met je bank-app. Niets overtikken, en alles blijft op je eigen apparaat.</p>
+      </div>
+
       <ol class="stappen" aria-label="Voortgang">
         <li data-stap="1"><span class="streep"></span><span class="label">1 · Invullen</span></li>
         <li data-stap="2"><span class="streep"></span><span class="label">2 · Controleren</span></li>
@@ -56,6 +61,18 @@
           <input type="file" id="factuur-bestand" accept="application/pdf,.pdf" class="verborgen">
         </div>
         <div id="factuur-status" class="factuur-status" aria-live="polite" hidden></div>
+        <div id="factuur-melding" class="factuur-melding" role="alert" hidden>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.5 2.5L16 9.5"></path></svg>
+          <div>
+            <b id="fm-titel"></b>
+            <p id="fm-bron"></p>
+            <p id="fm-uitleg"></p>
+            <div class="acties links">
+              <button type="button" id="fm-toch" class="knop">Toch betalen</button>
+            </div>
+            <p class="hint">Weet je zeker dat er nog betaald moet worden? Kies dan "Toch betalen".</p>
+          </div>
+        </div>
 
         <form id="form" autocomplete="off" novalidate>
           <div class="veld" id="veld-opgeslagen">
