@@ -10,7 +10,7 @@ import './vendor/jsqr/jsQR.js';   // zet self.jsQR
 
 const BASIS = new URL('./vendor/tesseract/', import.meta.url).href;
 const A4_BREED = 595;
-const MAX_ZIJDE = 2600;   // groter levert weinig op en kost veel tijd
+const MAX_ZIJDE = 3400;   // groter levert weinig op en kost veel tijd
 const MIN_BREED = 1400;   // kleinere foto's eerst vergroten
 
 let werkerBelofte = null;

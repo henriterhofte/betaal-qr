@@ -1,6 +1,6 @@
 {
   "naam": "Voorbeeld Schilders B.V.",
-  "iban": "NL91 ABNA 0417 1643 00",
+  "iban_ocr": "NL91 ABNA 0417 1643 00",
   "bedrag": "1.512,50",
   "omschrijving": "Factuur 2026-0417",
   "statusbevat": "tekstherkenning"

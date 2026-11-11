@@ -251,7 +251,8 @@ def main() -> None:
     facturen["incasso"] = (pdf([(t8, None)]), {"geblokkeerd": "automatisch afgeschreven", "bedrag": "121,00"})
 
     # 9. Tekstherkenning: dezelfde factuur als 'kolommen', als foto (JPEG, scheef) en als gescande PDF.
-    verwacht_ocr = {"naam": "Voorbeeld Schilders B.V.", "iban": IBAN_A, "bedrag": "1.512,50",
+    # Het IBAN (7-punts voettekst) mag ook 'niet goed leesbaar' zijn, mits dat gemeld wordt; nooit een ander geldig IBAN.
+    verwacht_ocr = {"naam": "Voorbeeld Schilders B.V.", "iban_ocr": IBAN_A, "bedrag": "1.512,50",
                     "omschrijving": "Factuur 2026-0417", "statusbevat": "tekstherkenning"}
     scan = als_beeld(t1)
     bestanden = {

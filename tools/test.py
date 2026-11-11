@@ -120,6 +120,10 @@ def facturen(pg, basis: str) -> None:
             meld(verwacht["status"] in status, f"{pdf.name}: status bevat '{verwacht['status']}' ({status[:70]}…)")
             continue
         v = velden(pg)
+        if "iban_ocr" in verwacht:
+            goed = v["iban"] == verwacht["iban_ocr"]
+            onleesbaar = "niet goed leesbaar" in status and v["iban"] and not v["iban"].replace(" ", "") == verwacht["iban_ocr"].replace(" ", "")
+            meld(goed or onleesbaar, f"{pdf.name}: iban = {v['iban']!r}" + ("" if goed else " (niet goed leesbaar gemeld)" if onleesbaar else f" (verwacht {verwacht['iban_ocr']!r})"))
         for k in ["naam", "iban", "bic", "bedrag", "omschrijving"]:
             if k in verwacht:
                 meld(v[k] == verwacht[k], f"{pdf.name}: {k} = {v[k]!r}" + ("" if v[k] == verwacht[k] else f" (verwacht {verwacht[k]!r})"))

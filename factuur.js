@@ -133,6 +133,7 @@
     var velden = {}, bron = {}, alternatieven = {}, waarschuwingen = [];
     var ibans = [];    // {iban, score, bron, pagina, y}
     var status = {};   // soort -> bron
+    var onleesbaar = null;   // {iban, bron}: IBAN-vorm bij "IBAN" maar met een fout controlegetal
 
     paginas.forEach(function (p) {
       p.regels.forEach(function (regel, ri) {
@@ -156,11 +157,22 @@
 
         // IBAN's, met voorkeur voor regels met "iban", "rekening" of "t.n.v.";
         // regels over de rekening van de klant zelf ("uw rekening", "incasso") tellen niet.
-        ibansIn(regel.tekst).forEach(function (iban) {
+        var gevondenHier = ibansIn(regel.tekst);
+        gevondenHier.forEach(function (iban) {
           var score = /iban|rekening|t\.?\s?n\.?\s?v|ten name van|bank/.test(t) ? 2 : 1;
           if (/uw (rekening|iban|bankrekening)|incasso|machtiging/.test(t)) score = 0;
           ibans.push({ iban: iban, score: score, bron: citaat(p, regel), pagina: p.nr, y: regel.y });
         });
+        // Staat er "IBAN" maar klopt het controlegetal niet (vaak een leesfout van de tekstherkenning)?
+        // Onthouden om te tonen, NIET verbeteren: een "verbeterd" IBAN kan van iemand anders zijn.
+        if (!gevondenHier.length && !onleesbaar && /\biban\b/.test(t)) {
+          var vorm = /\biban\b[\s:.]*([A-Z]{2}\s?[0-9O]{2}(?:\s?[A-Z0-9]{1,5}){2,8})/i.exec(regel.tekst);
+          if (vorm) {
+            var ruw = EPC.normaliseerIban(vorm[1]);
+            var lengte = IBAN_LENGTE[ruw.slice(0, 2)];
+            if (lengte && ruw.length >= lengte) onleesbaar = { iban: ruw.slice(0, lengte), bron: citaat(p, regel) };
+          }
+        }
 
         // BIC met label
         var bic = /\b(?:bic|swift)\b[\s:.-]*([A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)\b/i.exec(regel.tekst);
@@ -377,7 +389,8 @@
     // Een kaartje of betaalbewijs met een IBAN en een openstaand bedrag is waarschijnlijk toch een factuur.
     if (st && st.soort === 'bewijs' && velden.iban && velden.centen) st = null;
 
-    return { velden: velden, bron: bron, alternatieven: alternatieven, waarschuwingen: waarschuwingen, status: st };
+    return { velden: velden, bron: bron, alternatieven: alternatieven, waarschuwingen: waarschuwingen, status: st,
+      onleesbaar: velden.iban ? null : onleesbaar };
   }
 
   // Omschrijving voor de overschrijving: het betalingskenmerk als dat er is, anders "Factuur <nummer>".

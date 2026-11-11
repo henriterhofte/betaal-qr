@@ -158,6 +158,9 @@
     gelijk('hotel: balance 0,00 = betaald', hotel.status && hotel.status.soort, 'betaald');
     gelijk('hotel: totaal op de regel, niet de betaling eronder', hotel.velden.centen, 7184);
     gelijk('hotel: bill-nummer', hotel.velden.factuurnummer, '13779');
+    var slecht = Factuur.analyseer([pagina(1, [[800, [[200, 'IBAN: NL91 ABNA 0417 184300'], [320, 'BTWnr. NLOO 123 4567 BO1']]]])]);
+    gelijk('onleesbaar IBAN: niet ingevuld', slecht.velden.iban, undefined);
+    gelijk('onleesbaar IBAN: wel getoond zoals gelezen', slecht.onleesbaar && slecht.onleesbaar.iban, 'NL91ABNA0417184300');
     gelijk('BILL ITEMS is geen nummer', Factuur.analyseer([pagina(1, [[10, [[10, 'BILL ITEMS']]], [20, [[10, 'Stay Package (11-05-2026)']]]])]).velden.factuurnummer, undefined);
     gelijk('datum ISO en voluit', [
       Factuur.analyseer([pagina(1, [[100, [[60, 'Datum: 2025-10-14']]]])]).velden.factuurdatum,

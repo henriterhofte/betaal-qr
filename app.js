@@ -205,6 +205,10 @@
     else if (uit.iban) meldingen.push({ t: 'Dit rekeningnummer staat nog niet bij je bewaarde ontvangers. Betaal je deze ontvanger voor het eerst? Controleer het rekeningnummer dan via een tweede bron, zoals hun website of een eerdere factuur.' });
 
     var invoerWaarden = { naam: uit.naam, iban: uit.iban ? EPC.formatteerIban(uit.iban) : '', bic: uit.bic, bedrag: bedragAlsInvoer(uit.centen), omschrijving: uit.omschrijving };
+    // IBAN gezien maar niet goed leesbaar (controlegetal klopt niet): tonen zoals gelezen, zodat je ziet
+    // welk cijfer je moet nakijken. De controle in stap 1 houdt het tegen tot het klopt.
+    var ibanOnleesbaar = !uit.iban && a.onleesbaar ? a.onleesbaar : null;
+    if (ibanOnleesbaar) { invoerWaarden.iban = EPC.formatteerIban(ibanOnleesbaar.iban); bron.iban = ibanOnleesbaar.bron + ' (niet goed leesbaar)'; }
     velden.forEach(function (v) { $(v).value = invoerWaarden[v] || ''; aangeraakt[v] = !!invoerWaarden[v]; });
     $('opgeslagen').value = bekend ? bekend.iban : '';
     controleer();
@@ -234,13 +238,19 @@
     // Zegt de factuur dat er niets (meer) betaald hoeft te worden? Dan tonen we wat herkend is, maar
     // grijs en zonder door te kunnen, met "Toch betalen" voor als Betaal-QR het verkeerd ziet.
     if (a.status) {
-      factuurStatus('Gelezen uit ' + bestand.name + '.', 'ok');
+      factuurStatus((res.ocr ? 'Met tekstherkenning gelezen uit ' : 'Gelezen uit ') + bestand.name + '.', 'ok');
       zetGeblokkeerd(a.status);
       return;
     }
     if (!gevonden.length) {
       factuurStatus('In ' + bestand.name + ' staan geen betaalgegevens die Betaal-QR herkent. Is het wel een factuur? Vul de gegevens zelf in.', 'let-op');
       herkenning = null;
+      return;
+    }
+    if (ibanOnleesbaar) {
+      factuurStatus((res.ocr ? 'Met tekstherkenning gelezen uit ' : 'Gelezen uit ') + bestand.name + '. Het IBAN is niet goed leesbaar: Betaal-QR las ' +
+        EPC.formatteerIban(ibanOnleesbaar.iban) + ', maar het controlegetal klopt niet. Vergelijk het met de factuur en verbeter het cijfer dat verkeerd gelezen is.', 'let-op');
+      $('iban').focus();
       return;
     }
     if (!invoerWaarden.iban && res.ocr) {
