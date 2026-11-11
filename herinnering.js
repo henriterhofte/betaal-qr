@@ -44,7 +44,38 @@
     return dagen[d.getUTCDay()] + ' ' + iso.slice(8, 10) + '-' + iso.slice(5, 7) + '-' + iso.slice(0, 4);
   }
 
-  // betaling: EPC.maak(...).velden; datum: 'JJJJ-MM-DD'; qrPngBase64: optioneel; opties: {uid, nu, url}
+  function korteDatum(iso) {
+    var d = new Date(iso + 'T12:00:00Z');
+    return ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'][d.getUTCDay()] + ' ' + alsTekst(iso);
+  }
+  // 'JJJJ-MM-DD' -> 'dd-mm-jjjj': altijd zo, wat de taal van de browser ook is (die geeft soms mm/dd/jjjj).
+  function alsTekst(iso) { return iso ? iso.slice(8, 10) + '-' + iso.slice(5, 7) + '-' + iso.slice(0, 4) : ''; }
+  function dagErbij(iso, n) {
+    var d = new Date(iso + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+  // Wat iemand intikt naar 'JJJJ-MM-DD', of null. Dag eerst: 24-11-2026, 24/11/26, 24.11.2026, 24112026;
+  // en de ISO-vorm 2026-11-24. Een niet-bestaande datum (31-02) geeft null.
+  function leesDatum(tekst) {
+    var s = String(tekst || '').trim(), j, m, d, r;
+    if ((r = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s))) { j = +r[1]; m = +r[2]; d = +r[3]; }
+    else if ((r = /^(\d{1,2})\s*[-\/.\s]\s*(\d{1,2})\s*[-\/.\s]\s*(\d{4}|\d{2})$/.exec(s)) || (r = /^(\d{2})(\d{2})(\d{4}|\d{2})$/.exec(s))) {
+      d = +r[1]; m = +r[2]; j = +r[3]; if (r[3].length === 2) j += 2000;
+    } else return null;
+    var t = new Date(Date.UTC(j, m - 1, d));
+    if (t.getUTCFullYear() !== j || t.getUTCMonth() !== m - 1 || t.getUTCDate() !== d) return null;
+    return t.toISOString().slice(0, 10);
+  }
+  // Voorstel voor de betaaldatum: een dag voor de uiterste datum, maar niet in het verleden.
+  // (Overboekingen zijn in Nederland direct en ook in het weekend; met feestdagen hoeft geen rekening te worden gehouden.)
+  function voorstelBetaaldatum(uiterlijk, vandaag) {
+    if (!uiterlijk) return '';
+    var d = dagErbij(uiterlijk, -1);
+    return d < vandaag ? vandaag : d;
+  }
+
+  // betaling: EPC.maak(...).velden; datum: 'JJJJ-MM-DD'; qrPngBase64: optioneel; opties: {uid, nu, url, uiterlijk}
   function maak(betaling, datum, qrPngBase64, opties) {
     opties = opties || {};
     if (!/^\d{4}-\d{2}-\d{2}$/.test(datum || '')) throw new Error('datum ontbreekt of is ongeldig');
@@ -61,7 +92,8 @@
       v.bic ? 'BIC: ' + v.bic : null,
       'Bedrag: ' + bedrag,
       v.kenmerk ? 'Betalingskenmerk: ' + v.kenmerk : 'Omschrijving: ' + (oms || '(geen)'),
-      'Betalen vóór: ' + datumTekst(datum),
+      'Betaaldatum: ' + datumTekst(datum),
+      opties.uiterlijk && opties.uiterlijk !== datum ? 'Uiterste betaaldatum (factuur): ' + datumTekst(opties.uiterlijk) : null,
       '',
       qrPngBase64 ? 'De betaal-QR-code zit als bijlage bij deze afspraak (niet elke agenda toont die). Lukt scannen niet, neem de gegevens hierboven dan over in je bank-app.' : 'Neem de gegevens hierboven over in je bank-app.',
       'Vergelijk het IBAN met de factuur en let op de naam-nummercontrole van je bank.',
@@ -96,5 +128,6 @@
     return r.map(vouw).join('\r\n') + '\r\n';
   }
 
-  root.Herinnering = { maak: maak, datumTekst: datumTekst, vouw: vouw, esc: esc };
+  root.Herinnering = { maak: maak, datumTekst: datumTekst, korteDatum: korteDatum, alsTekst: alsTekst, leesDatum: leesDatum,
+    voorstelBetaaldatum: voorstelBetaaldatum, vouw: vouw, esc: esc };
 })(typeof self !== 'undefined' ? self : this);

@@ -410,40 +410,96 @@
     $('k-oms').textContent = kopieerTekst('omschrijving') || '—';
     $('payload').textContent = r.payload;
     var verval = herkenning && herkenning.vervaldatum;
-    $('betaaldatum').value = verval || '';
-    $('datum-herkomst').textContent = verval ? 'Uit de factuur. Je kunt de datum aanpassen.' : '';
+    $('betaaldatum').value = H.alsTekst(H.voorstelBetaaldatum(verval, vandaagIso()));
+    $('betaaldatum').removeAttribute('aria-invalid');
+    $('datum-herkomst').textContent = verval ? 'Een dag vóór de uiterste datum op de factuur (' + heel(H.alsTekst(verval)) + '). Je kunt de datum aanpassen.' : '';
     werkDatumBij();
   }
 
   // ---- later betalen: aanwijzing voor de bank-app en een agendaherinnering ----
+  var H = Herinnering;
   function vandaagIso() {
     var d = new Date();
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
+  // Datums in lopende tekst niet afbreken op het streepje: U+2011 is een niet-afbrekend streepje.
+  function heel(s) { return String(s).replace(/(\d)-(?=\d)/g, '$1‑'); }
+  function gekozenDatum() { return H.leesDatum($('betaaldatum').value); }
   function werkDatumBij() {
-    var d = $('betaaldatum').value;
+    var tekst = $('betaaldatum').value.trim();
+    var d = gekozenDatum();
+    var verval = herkenning && herkenning.vervaldatum;
     var tip = $('datum-tip');
     $('ics').disabled = !d;
-    if (!d) {
+    if (!tekst) {
       tip.textContent = 'Kies een datum om een herinnering te maken.';
+    } else if (!d) {
+      tip.textContent = 'Schrijf de datum als dd-mm-jjjj, bijvoorbeeld ' + H.alsTekst(vandaagIso()) + '.';
     } else if (d < vandaagIso()) {
-      tip.textContent = 'Let op: ' + Herinnering.datumTekst(d) + ' is al voorbij. Betaal zo snel mogelijk.';
+      tip.textContent = 'Let op: ' + heel(H.datumTekst(d)) + ' is al voorbij. Betaal zo snel mogelijk.';
     } else if (d === vandaagIso()) {
       tip.textContent = 'Vandaag betalen.';
     } else {
-      tip.textContent = 'Wil je het nu al regelen? Scan de code en kies in je bank-app als datum ' + Herinnering.datumTekst(d) +
+      tip.textContent = 'Wil je het nu al regelen? Kies in je bank-app na het scannen als datum ' + heel(H.datumTekst(d)) +
         ' (heet vaak "Later uitvoeren", "Datum" of "Inplannen"). Of zet een herinnering in je agenda.';
+    }
+    // De regel boven de QR-code: de datum die je na het scannen in je bank-app nodig hebt.
+    var regel = $('datum-regel');
+    regel.textContent = '';
+    regel.classList.remove('te-laat');
+    regel.hidden = !d;
+    if (!d) return;
+    var vandaag = d === vandaagIso();
+    regel.append(vandaag ? 'Betaal ' : 'Betaaldatum ');
+    var b = document.createElement('b');
+    b.textContent = vandaag ? 'vandaag' : heel(H.korteDatum(d));
+    regel.append(b);
+    var w = document.createElement('button');
+    w.type = 'button';
+    w.className = 'linkknop';
+    w.textContent = 'wijzig';
+    w.addEventListener('click', function () {
+      $('later-kop').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('betaaldatum').focus({ preventScroll: true });
+    });
+    regel.append(' ', w);
+    if (verval && verval !== d) {
+      var u = document.createElement('span');
+      u.className = 'uiterlijk';
+      var kort = heel(H.korteDatum(verval));
+      if (verval < vandaagIso()) { regel.classList.add('te-laat'); u.textContent = 'Uiterste datum was ' + kort; }
+      else u.textContent = 'Uiterlijk ' + kort;
+      regel.append(u);
     }
   }
   $('betaaldatum').addEventListener('input', function () {
-    $('datum-herkomst').textContent = herkenning && herkenning.vervaldatum && this.value !== herkenning.vervaldatum ? 'Door jou aangepast.' : $('datum-herkomst').textContent;
+    this.removeAttribute('aria-invalid');
+    var d = gekozenDatum();
+    var verval = herkenning && herkenning.vervaldatum;
+    if (verval && d) $('datum-herkomst').textContent = d === H.voorstelBetaaldatum(verval, vandaagIso()) ? $('datum-herkomst').textContent : 'Door jou aangepast. Uiterste datum op de factuur: ' + heel(H.alsTekst(verval)) + '.';
     werkDatumBij();
   });
+  $('betaaldatum').addEventListener('change', function () {
+    var d = gekozenDatum();
+    if (d) this.value = H.alsTekst(d);              // netjes als dd-mm-jjjj
+    else if (this.value.trim()) this.setAttribute('aria-invalid', 'true');
+  });
+  // Kalender: het datumvenster van de browser, maar het veld zelf blijft dd-mm-jjjj tonen.
+  $('kalender').addEventListener('click', function () {
+    var k = $('betaaldatum-kiezer');
+    k.value = gekozenDatum() || vandaagIso();
+    try { k.showPicker(); } catch (e) { $('betaaldatum').focus(); }
+  });
+  $('betaaldatum-kiezer').addEventListener('change', function () {
+    if (!this.value) return;
+    $('betaaldatum').value = H.alsTekst(this.value);
+    $('betaaldatum').dispatchEvent(new Event('input'));
+  });
   $('ics').addEventListener('click', function () {
-    var d = $('betaaldatum').value;
+    var d = gekozenDatum();
     if (!laatste || !d) return;
     var png = $('qr').toDataURL('image/png').split(',')[1];
-    var ics = Herinnering.maak(laatste.velden, d, png, { url: location.origin + '/' });
+    var ics = H.maak(laatste.velden, d, png, { url: location.origin + '/', uiterlijk: (herkenning && herkenning.vervaldatum) || null });
     var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);

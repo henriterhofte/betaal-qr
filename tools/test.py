@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from datetime import date, timedelta
 import functools
 import http.server
 import io
@@ -152,8 +153,14 @@ def facturen(pg, basis: str) -> None:
 def herinnering(pg, naam: str, verwacht: dict) -> None:
     """Stap 3: datum vooraf ingevuld; .ics downloaden en met icalendar (onafhankelijk) controleren."""
     pg.click("#naar3")
-    meld(pg.input_value("#betaaldatum") == verwacht["vervaldatum"], f"{naam}: betaaldatum in stap 3 = {pg.input_value('#betaaldatum')!r}")
-    pg.fill("#betaaldatum", "2026-12-01")   # de datum moet aan te passen zijn
+    # Voorstel: een dag voor de uiterste datum, niet in het verleden; altijd als dd-mm-jjjj.
+    voorstel = max(date.fromisoformat(verwacht["vervaldatum"]) - timedelta(days=1), date.today())
+    meld(pg.input_value("#betaaldatum") == voorstel.strftime("%d-%m-%Y"), f"{naam}: betaaldatum in stap 3 = {pg.input_value('#betaaldatum')!r}")
+    regel = pg.inner_text("#datum-regel").replace("‑", "-")   # niet-afbrekende streepjes
+    meld(voorstel.strftime("%d-%m-%Y") in regel or "vandaag" in regel, f"{naam}: datum boven de QR-code ({regel!r})")
+    pg.fill("#betaaldatum", "1/12/2026")   # de datum moet aan te passen zijn, ook in een andere schrijfwijze
+    pg.press("#betaaldatum", "Tab")
+    meld(pg.input_value("#betaaldatum") == "01-12-2026", f"{naam}: ingetikte datum netjes gemaakt ({pg.input_value('#betaaldatum')!r})")
     with pg.expect_download() as dl:
         pg.click("#ics")
     data = Path(dl.value.path()).read_bytes()

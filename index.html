@@ -220,6 +220,7 @@
         <div class="betaal-opties">
           <div class="optie optie-qr">
             <h2>Scan met je bank-app</h2>
+            <p class="datum-regel" id="datum-regel" hidden></p>
             <canvas id="qr" width="320" height="320" role="img" aria-label="Betaal-QR-code"></canvas>
             <p class="hint">Open in je bank-app de QR-scanner (meestal bij Overschrijven of Betalen).</p>
           </div>
@@ -253,7 +254,11 @@
           <h2 id="later-kop">Later betalen?</h2>
           <div class="veld datum-veld">
             <label for="betaaldatum">Betaaldatum</label>
-            <input type="date" id="betaaldatum">
+            <div class="datum-invoer">
+              <input type="text" id="betaaldatum" inputmode="numeric" placeholder="dd-mm-jjjj" autocomplete="off" spellcheck="false" aria-describedby="datum-herkomst">
+              <button type="button" class="knop" id="kalender">Kalender…</button>
+              <input type="date" id="betaaldatum-kiezer" class="kiezer" tabindex="-1" aria-hidden="true">
+            </div>
             <p class="hint" id="datum-herkomst"></p>
           </div>
           <p id="datum-tip" class="datum-tip"></p>

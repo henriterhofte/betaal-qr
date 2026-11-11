@@ -18,7 +18,8 @@ Op de telefoon: **Factuur op papier? Foto, en fluitend betaald.**
   wordt gelezen en vergeleken met de tekst. Alles lokaal (pdf.js en jsQR, pas geladen als je een PDF kiest).
 - **Foto's en scans.** Een foto van een papieren factuur (knop "Foto maken") of een gescande PDF wordt
   gelezen met tekstherkenning (Tesseract.js, Nederlands model), lokaal en pas geladen bij gebruik.
-- **Later betalen.** Stap 3 noemt de betaaldatum (uit de factuur, aan te passen) en maakt een
+- **Later betalen.** Stap 3 noemt boven de QR-code de betaaldatum: standaard een dag vóór de uiterste
+  datum op de factuur (niet in het verleden), altijd als dd-mm-jjjj en aan te passen. Daaronder maakt het een
   agendaherinnering (.ics) met de QR-code als bijlage en alle gegevens om te betalen, met meldingen
   twee dagen ervoor en op de dag zelf. Een uitvoerdatum kan niet in een EPC-QR; die kies je in je bank-app.
 - **Delen en openen met.** Als geïnstalleerde app: op Android een PDF delen naar Betaal-QR (Web Share Target,

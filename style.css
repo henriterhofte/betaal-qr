@@ -203,11 +203,12 @@ input[aria-invalid="true"] { border-color: var(--fout); }
   /* Op een smal scherm: de QR-code bovenaan en compact (zichtbaar zonder scrollen), met de uitleg ernaast;
      daaronder wat je zonder scannen kunt doen. */
   .betaal-opties { grid-template-columns: minmax(0, 1fr); grid-template-areas: "qr" "telefoon" "lijst"; gap: 18px; }
-  .optie-qr { display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-areas: "beeld kop" "beeld tip";
+  .optie-qr { display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-areas: "datum datum" "beeld kop" "beeld tip";
     align-items: start; column-gap: 14px; row-gap: 4px; text-align: left; }
   .optie-qr canvas { grid-area: beeld; width: 150px; max-width: 150px; }
   .optie-qr h2 { grid-area: kop; margin: 4px 0 0; }
   .optie-qr .hint { grid-area: tip; }
+  .optie-qr .datum-regel { grid-area: datum; margin-bottom: 6px; }
   .optie-telefoon { border-top: 1px solid var(--rand-licht); padding-top: 16px; }
   .kaart#stap3 { gap: 16px; }
 }
@@ -311,7 +312,15 @@ html { scroll-padding-top: 16px; }
 /* later betalen (stap 3) */
 .later { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--rand-licht); padding-top: 18px; }
 .later h2 { margin: 0; font-size: 1rem; }
-.datum-veld { max-width: 240px; }
+.datum-veld { max-width: 320px; }
+.datum-invoer { position: relative; display: flex; gap: 8px; align-items: stretch; }
+.datum-invoer input[type="text"] { flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
+/* De echte datumkiezer van de browser, onzichtbaar: alleen het kalendervenster wordt gebruikt (showPicker). */
+.datum-invoer .kiezer { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; }
+.datum-regel { margin: 0; font-size: .95rem; }
+.datum-regel .uiterlijk { display: block; color: var(--zacht); font-size: .85rem; }
+.datum-regel.te-laat .uiterlijk { color: var(--fout); }
+.datum-regel .linkknop { font: inherit; font-size: .88rem; background: none; border: 0; padding: 0 2px; color: var(--accent); text-decoration: underline; cursor: pointer; }
 .datum-tip { margin: 0; font-size: .92rem; }
 
 /* doneren: maker, knoppen, wegklikken */
