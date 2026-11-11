@@ -407,9 +407,19 @@
     naarStap(1);
   });
 
+  // "Doneren" in de kopbalk: in stap 3 naar het blok in de kaart, anders naar het vaste blok.
+  $('naar-doneren').addEventListener('click', function (e) {
+    e.preventDefault();
+    var doel = $('stap3').hidden ? $('doneren') : $('doneer-actief');
+    doel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    (doel.querySelector('h2[tabindex]') || doel).focus({ preventScroll: true });
+  });
+
   // ---- stappen wisselen ----
   function naarStap(n) {
     [1, 2, 3].forEach(function (i) { $('stap' + i).hidden = i !== n; });
+    // In stap 3 staat het doneerblok al in de kaart; het vaste blok eronder dan niet nog eens.
+    $('doneren').hidden = n === 3;
     document.querySelectorAll('.stappen li').forEach(function (li) {
       var i = +li.dataset.stap;
       li.classList.toggle('gedaan', i <= n);

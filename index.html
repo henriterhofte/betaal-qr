@@ -19,7 +19,10 @@
   <header class="balk">
     <div class="kolom balk-binnen">
       <span class="merk">Betaal-QR</span>
-      <span class="belofte">Lokaal · offline · niets wordt verstuurd</span>
+      <span class="balk-rechts">
+        <span class="belofte">Lokaal · offline · niets wordt verstuurd</span>
+        <a href="#doneren" id="naar-doneren" class="balk-link">Doneren</a>
+      </span>
     </div>
   </header>
 
@@ -197,16 +200,32 @@
           <button type="button" id="nieuw" class="knop hoofd">Nieuwe betaling</button>
         </div>
 
-        <aside class="doneer" aria-labelledby="doneer-kop">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21c-4-3-8-6.5-8-11a4 4 0 0 1 8-1.5A4 4 0 0 1 20 10c0 4.5-4 8-8 11z"></path></svg>
-          <div>
-            <h2 id="doneer-kop">Vind je Betaal-QR nuttig?</h2>
-            <p>Betaal-QR is gratis. Steun in plaats daarvan een goed doel voor natuur en milieu naar keuze, bijvoorbeeld uit het <a href="https://cbf.nl/register-erkende-goede-doelen?sector=Natuur+en+milieu&amp;status=Erkend" target="_blank" rel="noopener noreferrer">register van erkende goede doelen van het CBF</a>.</p>
-            <p>Vind je het moeilijk om te kiezen? <a href="https://natuurenmilieu.nl/doneren/" target="_blank" rel="noopener noreferrer">Doneer een bedrag aan Natuur &amp; Milieu</a>, bijvoorbeeld € 5.</p>
+        <aside class="doneer actief" id="doneer-actief" aria-labelledby="doneer-kop" tabindex="-1">
+          <div class="doneer-kop">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21c-4-3-8-6.5-8-11a4 4 0 0 1 8-1.5A4 4 0 0 1 20 10c0 4.5-4 8-8 11z"></path></svg>
+            <h2 id="doneer-kop">Geholpen? Doneer aan een groen goed doel</h2>
           </div>
+          <p>Betaal-QR is gratis en blijft dat. Vond je het nuttig, steun dan een goed doel voor natuur en milieu naar keuze. Bijvoorbeeld met € 5, of het bedrag dat jij redelijk vindt.</p>
+          <div class="acties links">
+            <a class="knop hoofd" href="https://cbf.nl/register-erkende-goede-doelen?sector=Natuur+en+milieu&amp;status=Erkend" target="_blank" rel="noopener noreferrer">Kies een erkend goed doel</a>
+            <a class="knop" href="https://natuurenmilieu.nl/doneren/" target="_blank" rel="noopener noreferrer">Doneer aan Natuur &amp; Milieu</a>
+          </div>
+          <p class="hint">"Kies een erkend goed doel" opent het register van het CBF met erkende goede doelen voor natuur en milieu. Moeilijk kiezen? Natuur &amp; Milieu is een goede keuze. Je doneert op hun eigen website; Betaal-QR ziet daar niets van.</p>
         </aside>
       </section>
     </div>
+
+    <section class="doneer vast" id="doneren" aria-labelledby="doneren-kop">
+      <div class="doneer-kop">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21c-4-3-8-6.5-8-11a4 4 0 0 1 8-1.5A4 4 0 0 1 20 10c0 4.5-4 8-8 11z"></path></svg>
+        <h2 id="doneren-kop" tabindex="-1">Doneren</h2>
+      </div>
+      <p>Betaal-QR is gratis. Vind je het nuttig, steun dan een goed doel voor natuur en milieu naar keuze, bijvoorbeeld met € 5.</p>
+      <div class="acties links">
+        <a class="knop" href="https://cbf.nl/register-erkende-goede-doelen?sector=Natuur+en+milieu&amp;status=Erkend" target="_blank" rel="noopener noreferrer">Kies een erkend goed doel</a>
+        <a class="knop" href="https://natuurenmilieu.nl/doneren/" target="_blank" rel="noopener noreferrer">Doneer aan Natuur &amp; Milieu</a>
+      </div>
+    </section>
 
     <section class="vertrouwen" aria-labelledby="vt-kop">
       <h2 id="vt-kop">Blijven je gegevens echt hier?</h2>

@@ -275,12 +275,27 @@ footer { margin-top: 28px; color: var(--zacht); font-size: .85rem; }
 .nieuwe-versie { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
   padding: 12px 16px; border-radius: 8px; background: var(--vlak); border: 1px solid var(--accent); }
 
-/* doneren (stap 3) */
-.doneer { display: flex; gap: 12px; align-items: flex-start; border-top: 1px solid var(--rand-licht); padding-top: 18px; font-size: .92rem; }
-.doneer svg { flex: none; color: var(--accent); margin-top: 2px; }
-.doneer h2 { margin: 0 0 4px; font-size: 1rem; }
-.doneer p { margin: 0; color: var(--zacht); }
-.doneer p + p { margin-top: 6px; }
+/* doneren */
+.doneer { display: flex; flex-direction: column; gap: 10px; font-size: .92rem; }
+.doneer-kop { display: flex; gap: 10px; align-items: center; }
+.doneer-kop svg { flex: none; color: var(--accent); }
+.doneer h2 { margin: 0; font-size: 1.05rem; }
+.doneer h2:focus { outline: none; }
+.doneer p { margin: 0; }
+.doneer .hint { color: var(--zacht); }
+.doneer a.knop { display: inline-flex; align-items: center; text-decoration: none; }
+.doneer.actief { background: var(--grond); border: 1px solid var(--accent); border-radius: 8px; padding: 18px 20px; }
+.doneer.actief:focus { outline: none; }
+.doneer.vast { margin-top: 24px; background: var(--vlak); border: 1px solid var(--rand); border-radius: 8px; padding: 18px 24px; }
+@media (max-width: 560px) { .doneer.vast, .doneer.actief { padding: 16px; } }
+@media (max-width: 480px) { .doneer a.knop { width: 100%; justify-content: center; } }
+html { scroll-padding-top: 16px; }
+
+/* kopbalk: doneren */
+.balk-rechts { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; }
+.balk-link { color: var(--balk-tekst); font-size: .9rem; font-weight: 600; text-decoration: none; border: 1px solid var(--balk-zacht); border-radius: 6px; padding: 6px 12px; }
+.balk-link:hover { color: var(--balk-tekst); border-color: var(--balk-tekst); }
+.balk-link:focus-visible { outline: 3px solid var(--balk-zacht); outline-offset: 2px; }
 
 /* later betalen (stap 3) */
 .later { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--rand-licht); padding-top: 18px; }
