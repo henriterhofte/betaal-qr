@@ -175,6 +175,14 @@ input[aria-invalid="true"] { border-color: var(--fout); }
   border-radius: 6px; padding: 14px 16px; font-size: .92rem;
 }
 .melding-let-op svg { flex: none; margin-top: 1px; color: var(--let-op-icoon); }
+.naamcontrole p { margin: 0; }
+.naamcontrole ul { margin: 6px 0; padding-left: 20px; }
+.naamcontrole li + li { margin-top: 3px; }
+.qr-controle { margin: 0; font-size: .82rem; color: var(--zacht); }
+.qr-controle.fout { color: var(--fout); font-weight: 600; }
+.ics-uitklap summary { cursor: pointer; color: var(--accent); font-size: .92rem; }
+.ics-uitklap[open] summary { margin-bottom: 10px; }
+.ics-uitklap .hint { margin-top: 8px; }
 .melding-waarschuwing { margin-top: 20px; padding: 14px 16px; border: 1px solid var(--fout); border-radius: 6px; background: var(--vlak); }
 
 /* betalen (stap 3) */
@@ -208,6 +216,7 @@ input[aria-invalid="true"] { border-color: var(--fout); }
   .optie-qr canvas { grid-area: beeld; width: 150px; max-width: 150px; }
   .optie-qr h2 { grid-area: kop; margin: 4px 0 0; }
   .optie-qr .hint { grid-area: tip; }
+  .optie-qr .qr-controle { grid-column: 1; }
   .optie-qr .datum-regel { grid-area: datum; margin-bottom: 6px; }
   .optie-telefoon { border-top: 1px solid var(--rand-licht); padding-top: 16px; }
   .kaart#stap3 { gap: 16px; }

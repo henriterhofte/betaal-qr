@@ -339,6 +339,7 @@
     $('c-oms').textContent = v.kenmerk ? 'Kenmerk ' + v.kenmerk : (v.omschrijving || '—');
     var ul = $('waarschuwingen'); ul.textContent = '';
     ibanWijzigingen(v).forEach(function (t) { meld(t).classList.add('ernstig'); });
+    waarschuwDubbel(v);
 
     // Herkomst en meldingen van een gelezen factuur (alleen voor velden die nog zo zijn als gelezen)
     var lijst = $('c-herkomst-lijst'); lijst.textContent = '';
@@ -373,6 +374,43 @@
     return li;
   }
 
+  // ---- dubbel betalen: een vingerafdruk (SHA-256) van facturen waarvoor al een code is gemaakt ----
+  // Alleen in deze browser, en alleen de vingerafdruk: geen IBAN, bedrag of omschrijving in leesbare vorm.
+  var GEMAAKT = 'betaalqr.gemaakt';
+  var ditBezoek = {};   // codes uit dit bezoek tellen niet (heen en weer tussen stap 2 en 3)
+  function vingerafdruk(v) {
+    var oms = String(v.kenmerk || v.omschrijving || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!oms || !(window.crypto && crypto.subtle)) return Promise.resolve(null);   // zonder factuurnummer te onzeker
+    var tekst = 'betaalqr-v1|' + v.iban + '|' + v.centen + '|' + oms;
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(tekst)).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2, '0'); }).join('').slice(0, 32);
+    }).catch(function () { return null; });
+  }
+  function leesGemaakt() {
+    try { var l = JSON.parse(localStorage.getItem(GEMAAKT) || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; }
+  }
+  function onthoudGemaakt(v) {
+    vingerafdruk(v).then(function (h) {
+      if (!h) return;
+      ditBezoek[h] = true;
+      var grens = new Date(Date.now() - 548 * 864e5).toISOString().slice(0, 10);   // anderhalf jaar
+      var lijst = leesGemaakt().filter(function (x) { return x.h !== h && x.d >= grens; });
+      lijst.push({ h: h, d: vandaagIso() });
+      try { localStorage.setItem(GEMAAKT, JSON.stringify(lijst.slice(-500))); } catch (e) { /* geen opslag: dan maar geen waarschuwing */ }
+    });
+  }
+  function waarschuwDubbel(v) {
+    vingerafdruk(v).then(function (h) {
+      if (!h || ditBezoek[h] || !laatste || laatste.velden !== v) return;
+      var eerder = leesGemaakt().filter(function (x) { return x.h === h; })[0];
+      if (!eerder) return;
+      var li = meld('Voor deze factuur (zelfde rekeningnummer, bedrag en omschrijving) maakte je op ' + datumTekst(eerder.d) +
+        ' al een betaal-QR. Kijk eerst in je bank-app of hij al betaald is, zodat je niet twee keer betaalt.');
+      li.classList.add('ernstig');
+      $('waarschuwingen').insertBefore(li, $('waarschuwingen').firstChild);
+    });
+  }
+
   // Factuurfraude ("ons rekeningnummer is gewijzigd"): bekende naam met een ander IBAN dan bewaard.
   function ibanWijzigingen(v) {
     var naam = v.naam.toLowerCase();
@@ -394,6 +432,7 @@
       schrijfOntvangers(lijst);
       vulLijst(v.iban);
     }
+    onthoudGemaakt(laatste.velden);
     vulBetalen(laatste);
     naarStap(3);
   });
@@ -402,6 +441,8 @@
   function vulBetalen(r) {
     var v = r.velden;
     tekenQr(r.payload);
+    $('deel').disabled = false; $('download').disabled = false;
+    controleerQr(r.payload);
     $('b-bedrag').textContent = EPC.centenNaarTekst(v.centen);
     $('b-naam').textContent = v.naam;
     $('k-naam').textContent = v.naam;
@@ -521,6 +562,37 @@
     for (var r = 0; r < n; r++) for (var k = 0; k < n; k++) {
       if (qr.isDark(r, k)) g.fillRect((k + rand) * schaal, (r + rand) * schaal, schaal, schaal);
     }
+  }
+
+  // Elke code eerst zelf teruglezen (met jsQR, een andere bibliotheek dan die hem maakte) en vergelijken
+  // met wat erin hoort. Klopt het niet, dan tonen we de code niet: liever geen code dan een verkeerde.
+  var jsQrLaden = null;
+  function controleerQr(payload) {
+    var c = $('qr'), uit = $('qr-controle');
+    uit.hidden = true; uit.classList.remove('fout');
+    c.style.visibility = 'hidden';
+    if (!jsQrLaden) jsQrLaden = import('./vendor/jsqr/jsQR.js').then(function () { return self.jsQR; });
+    var poging = jsQrLaden.then(function (jsQR) {
+      var img = c.getContext('2d').getImageData(0, 0, c.width, c.height);
+      var code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      return code ? code.data : null;
+    });
+    return poging.then(function (gelezen) {
+      if (laatste && laatste.payload !== payload) return;   // intussen een andere betaling
+      if (gelezen === payload) {
+        c.style.visibility = '';
+        uit.textContent = '✓ Gecontroleerd';
+        uit.title = 'Betaal-QR heeft deze code zelf teruggelezen: de inhoud is precies gelijk aan de gegevens hieronder.';
+        uit.hidden = false;
+      } else {
+        uit.textContent = 'Deze code kon niet goed worden teruggelezen en wordt daarom niet getoond. Gebruik de gegevens hieronder.';
+        uit.classList.add('fout');
+        uit.hidden = false;
+        $('deel').disabled = true; $('download').disabled = true;
+      }
+    }, function () {
+      c.style.visibility = '';   // jsQR niet te laden (offline vóór de eerste keer): code tonen, zonder vinkje
+    });
   }
 
   function kopieerTekst(veld) {

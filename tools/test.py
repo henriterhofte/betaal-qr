@@ -161,6 +161,7 @@ def herinnering(pg, naam: str, verwacht: dict) -> None:
     pg.fill("#betaaldatum", "1/12/2026")   # de datum moet aan te passen zijn, ook in een andere schrijfwijze
     pg.press("#betaaldatum", "Tab")
     meld(pg.input_value("#betaaldatum") == "01-12-2026", f"{naam}: ingetikte datum netjes gemaakt ({pg.input_value('#betaaldatum')!r})")
+    pg.click("#ics-uitklap summary")   # de agendaknop zit in een uitklapper
     with pg.expect_download() as dl:
         pg.click("#ics")
     data = Path(dl.value.path()).read_bytes()
@@ -185,6 +186,24 @@ def herinnering(pg, naam: str, verwacht: dict) -> None:
             meld(tekst.startswith("BCD") and verwacht["iban"].replace(" ", "") in tekst, f"{naam}: QR in de .ics is leesbaar en klopt")
         except ImportError:
             pass
+
+
+def dubbel_en_controle(pg, basis: str) -> None:
+    """Een factuur waarvoor al een code is gemaakt (bij facturen()), opnieuw openen: stap 2 waarschuwt.
+    En in stap 3 is de QR-code door de app zelf teruggelezen."""
+    open_factuur(pg, basis, FACTUREN / "kolommen.pdf")
+    pg.click("#naar2")
+    w = wacht_tot(pg, "#waarschuwingen", lambda t: "al een betaal-QR" in t, timeout=5)
+    meld("al een betaal-QR" in w, "dubbel betalen: stap 2 waarschuwt bij een factuur die je eerder opende")
+    pg.click("#naar3")
+    c = wacht_tot(pg, "#qr-controle", lambda t: bool(t.strip()), timeout=10).replace("✓", "").strip()
+    meld("Gecontroleerd" in c and pg.is_visible("#qr"), f"QR-code in de app teruggelezen en getoond ({c.strip()!r})")
+    pg.click("#terug2")
+    pg.click("#terug1")
+    pg.click("#naar2")   # stap 2 opnieuw opgebouwd
+    time.sleep(1)
+    w2 = pg.inner_text("#waarschuwingen")
+    meld("al een betaal-QR" not in w2, "dubbel betalen: geen waarschuwing voor een code uit hetzelfde bezoek")
 
 
 def doneren(pg, basis: str) -> None:
@@ -268,6 +287,7 @@ def main() -> None:
         unit(pg, basis)
         csp.clear()   # test.html heeft geen CSP; vanaf hier telt het
         facturen(pg, basis)
+        dubbel_en_controle(pg, basis)
         doneren(pg, basis)
         delen(browser, basis)
         if a.pdf:

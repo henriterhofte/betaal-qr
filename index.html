@@ -222,6 +222,7 @@
             <h2>Scan met je bank-app</h2>
             <p class="datum-regel" id="datum-regel" hidden></p>
             <canvas id="qr" width="320" height="320" role="img" aria-label="Betaal-QR-code"></canvas>
+            <p class="qr-controle" id="qr-controle" hidden></p>
             <p class="hint">Open in je bank-app de QR-scanner (meestal bij Overschrijven of Betalen).</p>
           </div>
 
@@ -247,7 +248,15 @@
 
         <div class="melding-let-op">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"></path><path d="M12 10v5M12 18v.01"></path></svg>
-          <span>Vergelijk in je bank-app het IBAN met de <b>factuur</b>, niet met deze pagina. Waarschuwt de naam-nummercontrole van je bank? Niet betalen.</span>
+          <div class="naamcontrole">
+            <p><b>Je bank controleert of naam en IBAN bij elkaar horen.</b> Kijk na het scannen wat je bank-app zegt:</p>
+            <ul>
+              <li><b>Naam klopt:</b> betaal.</li>
+              <li><b>Naam lijkt erop:</b> je bank laat de echte naam zien. Is dat duidelijk dezelfde partij als op de factuur? Dan kun je betalen.</li>
+              <li><b>Naam klopt niet, of controle niet mogelijk:</b> niet betalen. Bel de ontvanger eerst, op een nummer dat je al had (niet van de factuur).</li>
+            </ul>
+            <p>Vergelijk het IBAN in je bank-app met de <b>factuur</b>, niet met deze pagina.</p>
+          </div>
         </div>
 
         <div class="later" aria-labelledby="later-kop">
@@ -262,10 +271,13 @@
             <p class="hint" id="datum-herkomst"></p>
           </div>
           <p id="datum-tip" class="datum-tip"></p>
-          <div class="acties links">
-            <button type="button" id="ics" class="knop">Herinnering in je agenda (.ics)</button>
-          </div>
-          <p class="hint">In de herinnering staan de QR-code (als bijlage) en alle gegevens om te betalen, ook als je niet kunt scannen. Wordt je agenda online bijgehouden (Google, Outlook, iCloud), dan staan het IBAN en het bedrag daar ook.</p>
+          <details class="ics-uitklap" id="ics-uitklap">
+            <summary>Liever een herinnering in je agenda?</summary>
+            <div class="acties links">
+              <button type="button" id="ics" class="knop">Herinnering in je agenda (.ics)</button>
+            </div>
+            <p class="hint">In de herinnering staan de QR-code (als bijlage) en alle gegevens om te betalen, ook als je niet kunt scannen. Wordt je agenda online bijgehouden (Google, Outlook, iCloud), dan staan het IBAN en het bedrag daar ook.</p>
+          </details>
         </div>
 
         <details class="inhoud">
@@ -324,7 +336,7 @@
         <li><b>De code wordt in deze browser gemaakt.</b> Naam, IBAN, bedrag en omschrijving gaan nergens heen, ook niet naar deze site.</li>
         <li><b>De browser dwingt dat af.</b> De pagina mag geen verbindingen maken en geen formulieren versturen (zie hieronder). Ook als er per ongeluk code in zou zitten die dat wil, houdt de browser het tegen.</li>
         <li><b>Een factuur (PDF of foto) die je opent</b>, wordt in deze browser gelezen en nergens heen gestuurd. De PDF-lezer en de tekstherkenning worden pas geladen als je ze nodig hebt, en komen ook van deze site.</li>
-        <li><b>Bewaarde ontvangers</b> staan alleen in de opslag van deze browser op dit apparaat: niet in een cookie, niet op een server.</li>
+        <li><b>Bewaarde ontvangers</b> staan alleen in de opslag van deze browser op dit apparaat: niet in een cookie, niet op een server. Net als een vingerafdruk van elke factuur waarvoor je een code maakte (een onleesbare code, geen IBAN of bedrag), zodat Betaal-QR je kan waarschuwen als je dezelfde factuur nog eens wilt betalen.</li>
         <li><b>Werkt offline.</b> <span id="offline">Na het eerste bezoek werkt de pagina ook zonder internet.</span> Probeer het: zet de wifi uit en maak een code.</li>
         <li><b>Geen cookies, geen statistieken, niets van andere sites.</b></li>
       </ul>

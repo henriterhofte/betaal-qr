@@ -18,9 +18,16 @@ Op de telefoon: **Factuur op papier? Foto, en fluitend betaald.**
   wordt gelezen en vergeleken met de tekst. Alles lokaal (pdf.js en jsQR, pas geladen als je een PDF kiest).
 - **Foto's en scans.** Een foto van een papieren factuur (knop "Foto maken") of een gescande PDF wordt
   gelezen met tekstherkenning (Tesseract.js, Nederlands model), lokaal en pas geladen bij gebruik.
+- **Eerst zelf controleren.** Elke QR-code wordt na het maken door de app teruggelezen (met jsQR, een andere
+  bibliotheek dan die hem maakte) en vergeleken met de gegevens. Klopt het niet, dan wordt de code niet getoond.
+- **Dubbel betalen voorkomen.** Van elke factuur waarvoor je een code maakt, bewaart de browser een vingerafdruk
+  (SHA-256 van IBAN, bedrag en omschrijving; niet leesbaar). Open je dezelfde factuur later opnieuw, dan waarschuwt
+  stap 2. Zonder factuurnummer of omschrijving wordt niets bewaard (te onzeker bij vaste maandbedragen).
+- **Naamcontrole van je bank.** Stap 3 legt uit wat je doet bij elke uitkomst van de controle op naam en IBAN
+  (Verification of Payee): klopt, lijkt erop, klopt niet of niet mogelijk.
 - **Later betalen.** Stap 3 noemt boven de QR-code de betaaldatum: standaard een dag vóór de uiterste
   datum op de factuur (niet in het verleden), altijd als dd-mm-jjjj en aan te passen. Daaronder maakt het een
-  agendaherinnering (.ics) met de QR-code als bijlage en alle gegevens om te betalen, met meldingen
+  agendaherinnering (.ics, in een uitklapper) met de QR-code als bijlage en alle gegevens om te betalen, met meldingen
   twee dagen ervoor en op de dag zelf. Een uitvoerdatum kan niet in een EPC-QR; die kies je in je bank-app.
 - **Delen en openen met.** Als geïnstalleerde app: op Android een PDF delen naar Betaal-QR (Web Share Target,
   afgevangen door de service worker), op de laptop een PDF openen met Betaal-QR (File Handling API).
